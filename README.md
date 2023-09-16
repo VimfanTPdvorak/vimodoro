@@ -15,10 +15,8 @@ Usage
 -----
 The usage of vim-pomodoro is simple. `:PomodoroStart [pomodoro_name]` starts a
 new pomodoro.  The parameter `pomodoro_name` is optional. After a pomodoro has
-ended, a confirmation dialog will remind you to take a break. When the break has
-ended, another dialog will ask you if you want to start a new pomodoro.
-Furthermore, the remaining time of a pomodoro can be displayed in the statusline
-of vim.
+ended, a confirmation will remind you to take a break. When the break has
+ended, it prompt if you want to start a new pomodoro.
 
 Also, in addition to the default notifications inside vim, vim-pomodoro allows
 you to add further external notifications, such as sounds, system-notification
