@@ -9,30 +9,26 @@
 "   :PomodoroStart [name]   -   Start a new pomodoro. [name] is optional.
 "
 " Configuration:
-"   g:pomodoro_time_work      -  Duration of a pomodoro
-"   g:pomodoro_time_slack     -  Duration of a break
-"   g:pomodoro_log_file       -  Path to log file
-"   g:pomodoro_icon_inactive  -  Pomodoro inactive icon
-"   g:pomodoro_icon_started   -  Pomodoro started icon
-"   g:pomodoro_icon_break     -  Pomodoro break icon
-"   g:pomodoro_time_format    -  Time on statusbar when pomodoro is inactive.
-"   g:pomodoro_timer_duration -  Time on statusbar updated duration.
+"   g:pomodoro_time_work               -  Duration of a pomodoro
+"   g:pomodoro_time_slack              -  Duration of a break
+"   g:pomodoro_log_file                -  Path to log file
+"   g:pomodoro_icon_inactive           -  Pomodoro inactive icon
+"   g:pomodoro_icon_started            -  Pomodoro started icon
+"   g:pomodoro_icon_break              -  Pomodoro break icon
+"   g:pomodoro_time_format             -  Time format display on statusbar.
+"   g:pomodoro_status_refresh_duration -  Pomodoro/time refresh duration in second.
 
 if &cp || exists("g:pomodoro_loaded") && g:pomodoro_loaded
     finish
 endif
 
-let g:pomodoro_loaded = 1
-let g:pomodoro_started = 0
-let g:pomodoro_started_at = -1
-let g:pomodoro_break_at = -1
+call pomodorocommands#logger("g:pomodoro_debug_file", "Loading pomodoro...")
 
-let g:pomodoro_timer_duration = 15000 "In msec
-let g:pomodoro_display_time = 1
+" User configurable variables
+
 let g:pomodoro_time_format =  '%{strftime("%a %b %d, %H:%M:%S")}'
 let g:pomodoro_redisplay_status_duration = 2000
-
-let g:airline_section_y = g:pomodoro_time_format
+let g:pomodoro_status_refresh_duration = 15 " In second
 
 let g:pomodoro_icon_inactive = '🤖'
 let g:pomodoro_icon_started = '🍅'
@@ -46,6 +42,20 @@ if !exists('g:pomodoro_time_slack')
     let g:pomodoro_time_slack = 5
 endif
 
+" Variables should not be touched by users
+
+let g:pomodoro_loaded = 1
+let g:pomodoro_started = 0
+let g:pomodoro_started_at = -1
+let g:pomodoro_break_at = -1
+
+let g:pomodoro_display_time = 1
+let s:pomodoro_timer_duration = g:pomodoro_status_refresh_duration * 1000 "In msec
+
+" TODO: Should make it configurable so that section_y can be use for something
+" else, and be more flexible where user wanted to display the Pomodoro status.
+let g:airline_section_y = g:pomodoro_time_format
+
 let s:save_cpo = &cpo
 set cpo&vim
 
@@ -56,6 +66,8 @@ nnoremap <silent><leader>pt
             \ :call PomodoroToggleDisplayTime(g:pomodoro_display_time)<cr>
 inoremap <silent><leader>pt
             \ <esc>:call PomodoroToggleDisplayTime(g:pomodoro_display_time)<cr>a
+nnoremap <silent><leader>pm :call PomodoroDisplayTime()<cr>
+inoremap <silent><leader>pm <esc>:call PomodoroDisplayTime()<cr>a
 
 if !exists("g:no_plugin_maps") || g:no_plugin_maps == 0
     nmap <F7> <ESC>:PomodoroStart<CR>
@@ -75,48 +87,54 @@ function! PomodoroStatus()
         else
             let the_status = "Pomodoro started"
         endif
-        let the_status .= " (Remaining: " . pomodorocommands#remaining_time() . "m)"
+        let the_status .= " (Remaining: " . pomodorocommands#get_remaining(g:pomodoro_time_work, g:pomodoro_started_at) . ")"
     elseif g:pomodoro_started == 2
         silent! if exists('g:pomodoro_icon_break')
             let the_status = g:pomodoro_icon_break
         else
             let the_status = "Pomodoro break started"
         endif
-        let the_status .= " (Remaining: " . pomodorocommands#break_remaining_time() . "m)"
+        let the_status .= " (Remaining: " . pomodorocommands#get_remaining(g:pomodoro_time_slack, g:pomodoro_break_at) . ")"
     endif
 
     return the_status
 endfunction
 
 function! s:PomodoroStart(name)
-    call pomodorocommands#logger("Calling PomodoroStart")
-    if g:pomodoro_started != 1
+    call pomodorocommands#logger("g:pomodoro_debug_file", "Calling PomodoroStart")
+    if g:pomodoro_started == 0 " Pomodoro Inactive
         if a:name == ''
             let name = '(unnamed)'
         else
             let name = a:name
         endif
+
         let tempTimer = timer_start(g:pomodoro_time_work * 60 * 1000, function('pomodorohandlers#pause', [name]))
         let g:pomodoro_started_at = localtime()
         let g:pomodoro_started = 1
-        echom "Pomodoro " . name . " Started at: " . strftime('%I:%M:%S %d/%m/%Y', g:pomodoro_started_at)
-        if exists("g:pomodoro_log_file")
-            let logFile = g:pomodoro_log_file
-            if filereadable(logFile)
-                call writefile(["Pomodoro " . name . " Started at " .
-                            \ strftime('%I:%M:%S %d/%m/%Y', g:pomodoro_started_at)], logFile, "a")
-            endif
+
+        echom "Pomodoro " . name . " Started at: " . strftime('%c', g:pomodoro_started_at)
+
+        call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . name . " started.")
+
+        if g:pomodoro_display_time == 0
+            call pomodorocommands#logger("g:pomodoro_debug_file", "Set pomodoro_display_time to 1.")
+            let g:pomodoro_display_time = 1
+            let g:pomodoro_show_time_timer = timer_start(s:pomodoro_timer_duration,
+                        \ 's:PomodoroRefreshStatusLine', {'repeat': -1})
         endif
+
+        call pomodorocommands#logger("g:pomodoro_debug_file", "Set g:airline_section_y to PomodoroStatus.")
+
+        let g:airline_section_y = '%{PomodoroStatus()}'
+
+        AirlineRefresh
+    elseif g:pomodoro_started == 1 " Pomodoro Started
+        echo "Sorry, the Pomodoro is still running. In the future,
+                    \ we will inquire as to whether you have completed your work."
+    elseif g:pomodoro_started == 2 " Pomodoro break
+        echo "Inhale... Exhale... We still have time to relax."
     endif
-    if g:pomodoro_display_time == 0
-        call pomodorocommands#logger("Set pomodoro_display_time to 1.")
-        let g:pomodoro_display_time = 1
-        let g:pomodoro_show_time_timer = timer_start(g:pomodoro_timer_duration,
-                    \ 's:PomodoroRefreshStatusLine', {'repeat': -1})
-    endif
-    call pomodorocommands#logger("Set g:airline_section_y to PomodoroStatus.")
-    let g:airline_section_y = '%{PomodoroStatus()}'
-    AirlineRefresh
 endfunction
 
 function! s:PomodoroGetStatus()
@@ -129,16 +147,19 @@ function! s:PomodoroGetStatus()
     endif
 endfunction
 
-function PomodoroToggleDisplayTime(showTime)
+" Toggle display time/file format when Pomodoro is inactive, or toggle between
+" display Pomodoro status/file format for g:pomodoro_redisplay_status_duration
+" milliseconds then back to Pomodoro status if Pomodoro is running.
+function! PomodoroToggleDisplayTime(showTime)
     let g:pomodoro_display_time = !a:showTime
     if g:pomodoro_display_time == 1
         let g:airline_section_y = g:pomodoro_time_format
-        call pomodorocommands#logger("calling timer_start(g:pomodoro_timer_duration)")
+        call pomodorocommands#logger("g:pomodoro_debug_file", "calling timer_start(s:pomodoro_timer_duration)")
         call s:PomodoroStartsShowTimeTimer(0)
     else
         let g:airline_section_y =
                     \ '%{airline#util#wrap(airline#parts#ffenc(),0)}'
-        call pomodorocommands#logger("calling timer_stop(g:pomodoro_show_time_timer)")
+        call pomodorocommands#logger("g:pomodoro_debug_file", "calling timer_stop(g:pomodoro_show_time_timer)")
         call timer_stop(g:pomodoro_show_time_timer)
         if s:PomodoroGetStatus() !=# "inactive"
             let g:pomodoro_display_time = 1
@@ -149,15 +170,28 @@ function PomodoroToggleDisplayTime(showTime)
     AirlineRefresh
 endfunc
 
-func s:PomodoroStartsShowTimeTimer(timer)
+" Toggle display time for g:pomodoro_redisplay_status_duration milliseconds when
+" Pomodoro is running or when status line is displaying file encoding.
+function! PomodoroDisplayTime()
+    if g:pomodoro_display_time != 1 || g:pomodoro_started > 0
+        call pomodorocommands#logger("g:pomodoro_debug_file", "Executing PomodoroDisplayTime()")
+        let g:airline_section_y = g:pomodoro_time_format
+        call timer_stop(g:pomodoro_show_time_timer)
+        let tmpTimer = timer_start(g:pomodoro_redisplay_status_duration,
+                    \ 's:PomodoroStartsShowTimeTimer')
+        AirlineRefresh
+    endif
+endfunction
+
+function! s:PomodoroStartsShowTimeTimer(timer)
     call s:PomodoroRefreshStatusLine(0)
-    let g:pomodoro_show_time_timer = timer_start(g:pomodoro_timer_duration,
+    let g:pomodoro_show_time_timer = timer_start(s:pomodoro_timer_duration,
                 \ 's:PomodoroRefreshStatusLine',
                 \ {'repeat': -1})
 endfunction
 
-func s:PomodoroRefreshStatusLine(timer)
-    call pomodorocommands#logger("calling s:PomodoroRefreshStatusLine(timer)")
+function! s:PomodoroRefreshStatusLine(timer)
+    call pomodorocommands#logger("g:pomodoro_debug_file", "calling s:PomodoroRefreshStatusLine(timer)")
     if g:pomodoro_display_time == 1
         if s:PomodoroGetStatus() == "inactive"
             let g:airline_section_y = g:pomodoro_time_format
@@ -168,5 +202,6 @@ func s:PomodoroRefreshStatusLine(timer)
     endif
 endfunc
 
-call pomodorocommands#logger("calling timer_start(g:pomodoro_timer_duration) for the first time.")
+call pomodorocommands#logger("g:pomodoro_debug_file",
+            \ "calling timer_start(s:pomodoro_timer_duration) for the first time.")
 call s:PomodoroStartsShowTimeTimer(0)

@@ -14,9 +14,9 @@ show appreciation for their work.
 Usage
 -----
 The usage of vim-pomodoro is simple. `:PomodoroStart [pomodoro_name]` starts a
-new pomodoro.  The parameter `pomodoro_name` is optional. After a pomodoro has
-ended, a confirmation will remind you to take a break. When the break has
-ended, it prompt if you want to start a new pomodoro.
+new Pomodoro. The parameter `pomodoro_name` is optional. After a Pomodoro has
+ended, a confirmation will remind you to take a break. When the break has ended,
+it will prompt you if you wish to start a new Pomodoro.
 
 Also, in addition to the default notifications inside vim, vim-pomodoro allows
 you to add further external notifications, such as sounds, system-notification
@@ -33,17 +33,26 @@ being displayed again.
 
 Screenshots
 -----------
-Remaining time displayed in statusline
+The current time is displayed in the `g:airline_section_y` section if Pomodoro
+has not activated yet, either started or break.
 
-![Remaining Time](http://dl.dropbox.com/u/531773/vim-pomodoro/vim-pomodoro-remaining.png)
+![Current Time](img/ShowCurrentTime.png)
+
+Started remaining time displayed in statusline
+
+![Started Remaining Time](img/StartedRemainingTime.png)
+
+Break remaining time displayed in statusline
+
+![Break Remaining Time](img/BreakRemainingTime.png)
 
 Pomodoro finished, let's take a break!
 
-![Pomodoro Finished](http://dl.dropbox.com/u/531773/vim-pomodoro/vim-pomodoro-finished.png)
+![Pomodoro Finished](img/LetsTakeABreak.png)
 
 Take another turn?
 
-![Pomodoro Restart](http://dl.dropbox.com/u/531773/vim-pomodoro/vim-pomodoro-break.png)
+![Pomodoro Restart](img/PomodoroRestart.png)
 
 Configuration
 -------------
@@ -67,6 +76,16 @@ Add the following options to your `~/.vimrc` to configure vim-pomodoro
     " Pomodoro break icon (default: "🍕")
     let g:pomodoro_icon_break = "🍕"
 
+    " Pomodoro status/time updates duration in second (default: 15)
+    let g:pomodoro_status_refresh_duration = 15
+
+    " Time format display on statusbar (default:'%{strftime("%a %b %d, %H:%M:%S")}')
+    let g:pomodoro_time_format = '%{strftime("%a %b %d, %H:%M:%S")}'
+
+    " Display time for n milliseconds then followed by Pomodoro status being displayed again,
+    " or display file format for n milliseconds then back to display Pomodoro status.
+    let g:pomodoro_redisplay_status_duration = 2000
+
 
 ### Bells and Whistles
 Notifications outside vim can be enabled through the option `g:pomodoro_notification_cmd`.
@@ -78,6 +97,16 @@ to your `~/.vimrc`. System-wide notifications can, for instance, be done via zen
 the option
 
     let g:pomodoro_notification_cmd = 'zenity --notification --text="Pomodoro finished"''
+
+You can also use `g:pomodoro_work_end_notification_cmd` and `g:pomodoro_break_end_notification_cmd`
+that will be executed exclusively when work is done and when a break is done.  For instance,
+users on macOS can define the two variables like this:
+
+    let g:pomodoro_work_end_notification_cmd = "say 'Pomodoro focus time has ended.'"
+    let g:pomodoro_break_end_notification_cmd = "say 'Pomodoro break time has ended.'"
+
+The `g:pomodoro_notification_cmd` will be executed when either work or break
+time has ended, provided the specific notification variable is not set.
 
 Installation
 ------------
