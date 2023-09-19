@@ -39,9 +39,9 @@ endfunction
 
 
 function! pomodorohandlers#restart(name,timer)
-    let g:pomodoro_started = 0
-
     call pomodorocommands#notify()
+
+    let g:pomodoro_started = 0
 
     AirlineRefresh
 
