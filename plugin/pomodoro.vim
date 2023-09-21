@@ -9,8 +9,8 @@
 "   :PomodoroStart [name]   -   Start a new pomodoro. [name] is optional.
 "
 " Configuration:
-"   g:pomodoro_time_work               -  Duration of a pomodoro
-"   g:pomodoro_time_slack              -  Duration of a break
+"   g:pomodoro_work_duration               -  Duration of a pomodoro
+"   g:pomodoro_short_break              -  Duration of a break
 "   g:pomodoro_log_file                -  Path to log file
 "   g:pomodoro_icon_inactive           -  Pomodoro inactive icon
 "   g:pomodoro_icon_started            -  Pomodoro started icon
@@ -34,15 +34,23 @@ let g:pomodoro_icon_inactive = '🤖'
 let g:pomodoro_icon_started = '🍅'
 let g:pomodoro_icon_break = '🍕'
 
-if !exists('g:pomodoro_time_work')
-    let g:pomodoro_time_work = 25
+if !exists('g:pomodoro_work_duration')
+    let g:pomodoro_work_duration = 25
 endif
 
-if !exists('g:pomodoro_time_slack')
-    let g:pomodoro_time_slack = 5
+if !exists('g:pomodoro_short_break')
+    let g:pomodoro_short_break = 5
+endif
+
+if !exists('g:pomodoro_long_break')
+    let g:pomodoro_long_break = 15
 endif
 
 " Variables should not be touched by users
+
+let g:pomodoro_count = 1
+let g:pomodoro_stopped = 0
+let g:pomodoro_break_duration = g:pomodoro_short_break
 
 let g:pomodoro_loaded = 1
 let g:pomodoro_started = 0
@@ -87,14 +95,14 @@ function! PomodoroStatus()
         else
             let the_status = "Pomodoro started"
         endif
-        let the_status .= " (Remaining: " . pomodorocommands#get_remaining(g:pomodoro_time_work, g:pomodoro_started_at) . ")"
+        let the_status .= " (Remaining: " . pomodorocommands#get_remaining(g:pomodoro_work_duration, g:pomodoro_started_at) . ")"
     elseif g:pomodoro_started == 2
         silent! if exists('g:pomodoro_icon_break')
             let the_status = g:pomodoro_icon_break
         else
             let the_status = "Pomodoro break started"
         endif
-        let the_status .= " (Remaining: " . pomodorocommands#get_remaining(g:pomodoro_time_slack, g:pomodoro_break_at) . ")"
+        let the_status .= " (Remaining: " . pomodorocommands#get_remaining(g:pomodoro_break_duration, g:pomodoro_break_at) . ")"
     endif
 
     return the_status
@@ -109,13 +117,13 @@ function! s:PomodoroStart(name)
             let name = a:name
         endif
 
-        let tempTimer = timer_start(g:pomodoro_time_work * 60 * 1000, function('pomodorohandlers#pause', [name]))
+        let tempTimer = timer_start(g:pomodoro_work_duration * 60 * 1000, function('pomodorohandlers#pause', [name]))
         let g:pomodoro_started_at = localtime()
         let g:pomodoro_started = 1
 
         echom "Pomodoro " . name . " Started at: " . strftime('%c', g:pomodoro_started_at)
 
-        call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . name . " started.")
+        call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . name . " #" . g:pomodoro_count . " started.")
 
         if g:pomodoro_display_time == 0
             call pomodorocommands#logger("g:pomodoro_debug_file", "Set pomodoro_display_time to 1.")
@@ -129,11 +137,14 @@ function! s:PomodoroStart(name)
         let g:airline_section_y = '%{PomodoroStatus()}'
 
         AirlineRefresh
-    elseif g:pomodoro_started == 1 " Pomodoro Started
-        echo "Sorry, the Pomodoro is still running. In the future,
-                    \ we will inquire as to whether you have completed your work."
-    elseif g:pomodoro_started == 2 " Pomodoro break
-        echo "Inhale... Exhale... We still have time to relax."
+    else
+        let choice = confirm("Do you want to stop the running Pomodoro?", "&Yes\n&No")
+        if choice == 1
+            let g:pomodoro_stopped = 1
+            call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . a:name . " #" . g:pomodoro_count .
+                        \ " stopped. Duration: " .
+                        \ pomodorocommands#calculate_duration(g:pomodoro_started_at, localtime()) . ".")
+        endif
     endif
 endfunction
 

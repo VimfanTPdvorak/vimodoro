@@ -31,10 +31,10 @@ function! pomodorocommands#notify()
 endfunction
 
 function! pomodorocommands#get_remaining(given_duration, start_at_time)
-  let s:time_difference = abs(localtime() - a:start_at_time)
-  let s:minutes = (a:given_duration * 60 - s:time_difference) / 60
-  let s:seconds = (a:given_duration * 60 - s:time_difference) % 60
-  return printf('%dm%ds', s:minutes, s:seconds)
+    let s:time_difference = abs(localtime() - a:start_at_time)
+    let s:minutes = (a:given_duration * 60 - s:time_difference) / 60
+    let s:seconds = (a:given_duration * 60 - s:time_difference) % 60
+    return printf('%dm%ds', s:minutes, s:seconds)
 endfunction
 
 function! pomodorocommands#logger(strVarName, msg)
@@ -44,4 +44,11 @@ function! pomodorocommands#logger(strVarName, msg)
             call writefile([strftime("%c") . " - " . a:msg], eval(logFile), "a")
         endif
     endif
+endfunction
+
+function! pomodorocommands#calculate_duration(start_time, end_time)
+    let s:time_difference = abs(a:end_time - a:start_time)
+    let s:minutes = s:time_difference / 60
+    let s:seconds = s:time_difference % 60
+    return printf('%dm%ds', s:minutes, s:seconds)
 endfunction
