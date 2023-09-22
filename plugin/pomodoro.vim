@@ -9,8 +9,8 @@
 "   :PomodoroStart [name]   -   Start a new pomodoro. [name] is optional.
 "
 " Configuration:
-"   g:pomodoro_work_duration               -  Duration of a pomodoro
-"   g:pomodoro_short_break              -  Duration of a break
+"   g:pomodoro_work_duration           -  Duration of a pomodoro
+"   g:pomodoro_short_break             -  Duration of a break
 "   g:pomodoro_log_file                -  Path to log file
 "   g:pomodoro_icon_inactive           -  Pomodoro inactive icon
 "   g:pomodoro_icon_started            -  Pomodoro started icon
@@ -49,8 +49,8 @@ endif
 " Variables should not be touched by users
 
 let g:pomodoro_count = 1
-let g:pomodoro_stopped = 0
 let g:pomodoro_break_duration = g:pomodoro_short_break
+let g:pomodoro_name = "(unnamed)"
 
 let g:pomodoro_loaded = 1
 let g:pomodoro_started = 0
@@ -76,6 +76,8 @@ inoremap <silent><leader>pt
             \ <esc>:call PomodoroToggleDisplayTime(g:pomodoro_display_time)<cr>a
 nnoremap <silent><leader>pm :call PomodoroDisplayTime()<cr>
 inoremap <silent><leader>pm <esc>:call PomodoroDisplayTime()<cr>a
+nnoremap <silent><leader>pf :call PomodoroStop()<CR>
+inoremap <silent><leader>pf <Esc>:call PomodoroStop()<CR>a
 
 if !exists("g:no_plugin_maps") || g:no_plugin_maps == 0
     nmap <F7> <ESC>:PomodoroStart<CR>
@@ -111,37 +113,60 @@ endfunction
 function! s:PomodoroStart(name)
     call pomodorocommands#logger("g:pomodoro_debug_file", "Calling PomodoroStart")
     if g:pomodoro_started == 0 " Pomodoro Inactive
-        if a:name == ''
-            let name = '(unnamed)'
-        else
-            let name = a:name
-        endif
-
-        let tempTimer = timer_start(g:pomodoro_work_duration * 60 * 1000, function('pomodorohandlers#pause', [name]))
-        let g:pomodoro_started_at = localtime()
-        let g:pomodoro_started = 1
-
-        echom "Pomodoro " . name . " Started at: " . strftime('%c', g:pomodoro_started_at)
-
-        call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . name . " #" . g:pomodoro_count . " started.")
-
-        if g:pomodoro_display_time == 0
-            call pomodorocommands#logger("g:pomodoro_debug_file", "Set pomodoro_display_time to 1.")
-            let g:pomodoro_display_time = 1
-            let g:pomodoro_show_time_timer = timer_start(s:pomodoro_timer_duration,
-                        \ 's:PomodoroRefreshStatusLine', {'repeat': -1})
-        endif
-
-        call pomodorocommands#logger("g:pomodoro_debug_file", "Set g:airline_section_y to PomodoroStatus.")
-
-        let g:airline_section_y = '%{PomodoroStatus()}'
-
-        AirlineRefresh
+        call s:PomodoroGo(a:name)
     else
+        let choice = confirm("Do you really wanted to stop the current running Pomodoro and start a new one?", "&Yes\n&No")
+        if choice == 1
+            let g:pomodoro_count = 1
+            call timer_stop(g:pomodoro_run_timer)
+            call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . g:pomodoro_name . " #" . g:pomodoro_count .
+                        \ " stopped. Duration: " .
+                        \ pomodorocommands#calculate_duration(g:pomodoro_started_at, localtime()) . ".")
+
+            call s:PomodoroGo(a:name)
+        endif
+    endif
+endfunction
+
+function! s:PomodoroGo(name)
+    if a:name == ''
+        let g:pomodoro_name = '(unnamed)'
+    else
+        let g:pomodoro_name = a:name
+    endif
+
+    let g:pomodoro_run_timer = timer_start(g:pomodoro_work_duration * 60 * 1000, function('pomodorohandlers#pause', [a:name]))
+    let g:pomodoro_started_at = localtime()
+    let g:pomodoro_started = 1
+
+    echom "Pomodoro " . a:name . " Started at: " . strftime('%c', g:pomodoro_started_at)
+
+    call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . a:name . " #" . g:pomodoro_count . " started.")
+
+    if g:pomodoro_display_time == 0
+        call pomodorocommands#logger("g:pomodoro_debug_file", "Set pomodoro_display_time to 1.")
+        let g:pomodoro_display_time = 1
+        let g:pomodoro_show_time_timer = timer_start(s:pomodoro_timer_duration,
+                    \ 's:PomodoroRefreshStatusLine', {'repeat': -1})
+    endif
+
+    call pomodorocommands#logger("g:pomodoro_debug_file", "Set g:airline_section_y to PomodoroStatus.")
+
+    let g:airline_section_y = '%{PomodoroStatus()}'
+
+    AirlineRefresh
+endfunction
+
+function! g:PomodoroStop()
+    if g:pomodoro_started != 0 " Pomodoro Active (Started/Break)
         let choice = confirm("Do you want to stop the running Pomodoro?", "&Yes\n&No")
         if choice == 1
-            let g:pomodoro_stopped = 1
-            call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . a:name . " #" . g:pomodoro_count .
+            let g:pomodoro_started = 0
+            let g:pomodoro_count = 1
+            call timer_stop(g:pomodoro_run_timer)
+            let g:airline_section_y = g:pomodoro_time_format
+            call s:PomodoroStartsShowTimeTimer(0)
+            call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . g:pomodoro_name . " #" . g:pomodoro_count .
                         \ " stopped. Duration: " .
                         \ pomodorocommands#calculate_duration(g:pomodoro_started_at, localtime()) . ".")
         endif

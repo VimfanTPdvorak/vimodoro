@@ -31,6 +31,9 @@ If the Pomodoro has been running, then executing the toggle will display the
 file encoding within approximately two seconds, followed by the Pomodoro status
 being displayed again.
 
+`<leader>pm` -- Take a glimpse of the current date and time when the Pomodoro is in progress.
+`<leader>pf` -- Force stop on the ongoing Pomodoro.
+
 Screenshots
 -----------
 The current time is displayed in the `g:airline_section_y` section if Pomodoro
@@ -59,15 +62,20 @@ Configuration
 Add the following options to your `~/.vimrc` to configure vim-pomodoro
 
     " Duration of a pomodoro in minutes (default: 25)
-    let g:pomodoro_time_work = 25
+    let g:pomodoro_work_duration = 25
 
-    " Duration of a break in minutes (default: 5)
-    let g:pomodoro_time_slack = 5
+    " Duration of the short break in minutes (default: 5)
+    let g:pomodoro_short_break = 5
+    
+    " Duration of the long break in minutes (default: 15)
+    let g:pomodoro_long_break = 15
 
     " Path to the pomodoro log file (default: not defined)
+    " Will write to log if file exists
     let g:pomodoro_log_file = "/tmp/pomodoro.log"
 
     " Path to the pomodoro debug log file (default: not defined)
+    " Will write to debug log if file exists
     let g:pomodoro_debug_file = "/tmp/pomodoro.debug.log"
 
     " Pomodoro started icon (default: "🍅")
