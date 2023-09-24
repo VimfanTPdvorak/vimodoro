@@ -170,15 +170,21 @@ function! g:PomodoroStop()
     if g:pomodoro_started != 0 " Pomodoro Active (Started/Break)
         let choice = confirm("Do you want to stop the running Pomodoro?", "&Yes\n&No")
         if choice == 1
-            let g:pomodoro_started = 0
-            let g:pomodoro_count = 1
-            let g:pomodoro_interrupted = 1
             call timer_stop(g:pomodoro_run_timer)
             let g:airline_section_y = g:pomodoro_time_format
             call s:PomodoroStartsShowTimeTimer(0)
-            call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . g:pomodoro_name . " #" . g:pomodoro_count .
-                        \ " stopped. Duration: " .
-                        \ pomodorocommands#calculate_duration(g:pomodoro_started_at, localtime()) . ".")
+            if g:pomodoro_started == 1 " Started (Focus mode)
+                call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . g:pomodoro_name . " #" . g:pomodoro_count .
+                            \ " stopped. Duration: " .
+                            \ pomodorocommands#calculate_duration(g:pomodoro_started_at, localtime()) . ".")
+            else " The g:pomodoro_started == 2 (break mode)
+                call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . g:pomodoro_name . " #" . g:pomodoro_count .
+                            \ " break stopped. Duration: " .
+                            \ pomodorocommands#calculate_duration(g:pomodoro_break_at, localtime()) . ".")
+            endif
+            let g:pomodoro_started = 0
+            let g:pomodoro_count = 1
+            let g:pomodoro_interrupted = 1
         endif
     endif
 endfunction
