@@ -39,7 +39,7 @@ function! pomodorohandlers#pause(name,timer)
     let g:pomodoro_started = 2
 
     call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . g:pomodoro_name . " #" . g:pomodoro_count .
-                \ " ended. Duration: " . pomodorocommands#calculate_duration(g:pomodoro_started_at, localtime()) . ".")
+                \ " focus ended. Duration: " . pomodorocommands#calculate_duration(g:pomodoro_started_at, localtime()) . ".")
     call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . g:pomodoro_name . " #" . g:pomodoro_count . " break started.")
 
 
@@ -59,7 +59,7 @@ function! pomodorohandlers#restart(name, duration, timer)
                 \ " minutes break is over... Feeling rested?\nWant to start another pomodoro?",
                 \ "&Yes\n&No")
 
-    call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . a:name . " break ended. " .
+    call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . a:name . " #" . g:pomodoro_count . " break ended. " .
                 \ "Duration: " . pomodorocommands#calculate_duration(g:pomodoro_break_at, localtime()) . ".")
 
     if choice == 1

@@ -129,7 +129,7 @@ function! s:PomodoroStart(name)
             let g:pomodoro_count = 1
             call timer_stop(g:pomodoro_run_timer)
             call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . g:pomodoro_name . " #" . g:pomodoro_count .
-                        \ " stopped. Duration: " .
+                        \ " focus stopped. Duration: " .
                         \ pomodorocommands#calculate_duration(g:pomodoro_started_at, localtime()) . ".")
 
             call s:PomodoroGo(a:name)
@@ -150,7 +150,7 @@ function! s:PomodoroGo(name)
 
     echom "Pomodoro " . g:pomodoro_name . " #" . g:pomodoro_count . " started at: " . strftime('%c', g:pomodoro_started_at)
 
-    call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . g:pomodoro_name . " #" . g:pomodoro_count . " started.")
+    call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . g:pomodoro_name . " #" . g:pomodoro_count . " focus started.")
 
     if g:pomodoro_display_time == 0
         call pomodorocommands#logger("g:pomodoro_debug_file", "Set pomodoro_display_time to 1.")
@@ -175,7 +175,7 @@ function! g:PomodoroStop()
             call s:PomodoroStartsShowTimeTimer(0)
             if g:pomodoro_started == 1 " Started (Focus mode)
                 call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . g:pomodoro_name . " #" . g:pomodoro_count .
-                            \ " stopped. Duration: " .
+                            \ " focus stopped. Duration: " .
                             \ pomodorocommands#calculate_duration(g:pomodoro_started_at, localtime()) . ".")
             else " The g:pomodoro_started == 2 (break mode)
                 call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . g:pomodoro_name . " #" . g:pomodoro_count .
