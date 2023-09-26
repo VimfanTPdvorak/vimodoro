@@ -48,7 +48,10 @@ endif
 
 " Variables should not be touched by users
 
-let g:pomodoro_count = 1
+let s:pomodoro_secret = rand()
+
+call pomodorohandlers#get_secret(s:pomodoro_secret)
+
 let g:pomodoro_break_duration = g:pomodoro_short_break
 let g:pomodoro_name = ''
 let g:pomodoro_interrupted = 0
@@ -98,14 +101,14 @@ function! PomodoroStatus(full)
         endif
     elseif g:pomodoro_started == 1
         silent! if exists('g:pomodoro_icon_started')
-            let the_status = repeat(g:pomodoro_icon_started, g:pomodoro_count) . " "
+            let the_status = repeat(g:pomodoro_icon_started, pomodorohandlers#get_pomodoro_count()) . " "
         else
             let the_status = "Pomodoro started"
         endif
         let the_status .= pomodorocommands#get_remaining(g:pomodoro_work_duration, g:pomodoro_started_at)
     elseif g:pomodoro_started == 2
         silent! if exists('g:pomodoro_icon_break')
-            let the_status = repeat(g:pomodoro_icon_break, g:pomodoro_count) . " "
+            let the_status = repeat(g:pomodoro_icon_break, pomodorohandlers#get_pomodoro_count()) . " "
         else
             let the_status = "Pomodoro break started"
         endif
@@ -126,9 +129,9 @@ function! s:PomodoroStart(name)
     else
         let choice = confirm("Do you really wanted to stop the current running Pomodoro and start a new one?", "&Yes\n&No")
         if choice == 1
-            let g:pomodoro_count = 1
+            call pomodorohandlers#reset_pomodoro_count(s:pomodoro_secret)
             call timer_stop(g:pomodoro_run_timer)
-            call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . g:pomodoro_name . " #" . g:pomodoro_count .
+            call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . g:pomodoro_name . " #" . pomodorohandlers#get_pomodoro_count() .
                         \ " focus stopped. Duration: " .
                         \ pomodorocommands#calculate_duration(g:pomodoro_started_at, localtime()) . ".")
 
@@ -148,9 +151,9 @@ function! s:PomodoroGo(name)
     let g:pomodoro_started_at = localtime()
     let g:pomodoro_started = 1
 
-    echom "Pomodoro " . g:pomodoro_name . " #" . g:pomodoro_count . " started at: " . strftime('%c', g:pomodoro_started_at)
+    echom "Pomodoro " . g:pomodoro_name . " #" . pomodorohandlers#get_pomodoro_count() . " started at: " . strftime('%c', g:pomodoro_started_at)
 
-    call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . g:pomodoro_name . " #" . g:pomodoro_count . " focus started.")
+    call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . g:pomodoro_name . " #" . pomodorohandlers#get_pomodoro_count() . " focus started.")
 
     if g:pomodoro_display_time == 0
         call pomodorocommands#logger("g:pomodoro_debug_file", "Set pomodoro_display_time to 1.")
@@ -174,16 +177,16 @@ function! g:PomodoroStop()
             let g:airline_section_y = g:pomodoro_time_format
             call s:PomodoroStartsShowTimeTimer(0)
             if g:pomodoro_started == 1 " Started (Focus mode)
-                call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . g:pomodoro_name . " #" . g:pomodoro_count .
+                call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . g:pomodoro_name . " #" . pomodorohandlers#get_pomodoro_count() .
                             \ " focus stopped. Duration: " .
                             \ pomodorocommands#calculate_duration(g:pomodoro_started_at, localtime()) . ".")
             else " The g:pomodoro_started == 2 (break mode)
-                call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . g:pomodoro_name . " #" . g:pomodoro_count .
+                call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . g:pomodoro_name . " #" . pomodorohandlers#get_pomodoro_count() .
                             \ " break stopped. Duration: " .
                             \ pomodorocommands#calculate_duration(g:pomodoro_break_at, localtime()) . ".")
             endif
             let g:pomodoro_started = 0
-            let g:pomodoro_count = 1
+            call pomodorohandlers#reset_pomodoro_count(s:pomodoro_secret)
             let g:pomodoro_interrupted = 1
         endif
     endif
