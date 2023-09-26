@@ -14,6 +14,7 @@ let g:loaded_autoload_pomodorohandlers = 1
 let s:pomodoro_secret = 0
 
 let s:pomodoro_count = 1
+let s:pomodoro_break_duration = g:pomodoro_short_break
 
 function! pomodorohandlers#get_secret(the_secret)
     let s:pomodoro_secret = a:the_secret
@@ -32,16 +33,16 @@ function! pomodorohandlers#pause(name,timer)
     AirlineRefresh
 
     if s:pomodoro_count == 4
-        let g:pomodoro_break_duration = g:pomodoro_long_break
+        let s:pomodoro_break_duration = g:pomodoro_long_break
     else
-        let g:pomodoro_break_duration = g:pomodoro_short_break
+        let s:pomodoro_break_duration = g:pomodoro_short_break
     endif
 
     call pomodorocommands#logger("g:pomodoro_debug_file", "s:pomodoro_count = " . s:pomodoro_count)
-    call pomodorocommands#logger("g:pomodoro_debug_file", "g:pomodoro_break_duration = " . g:pomodoro_break_duration)
+    call pomodorocommands#logger("g:pomodoro_debug_file", "s:pomodoro_break_duration = " . s:pomodoro_break_duration)
 
     let choice = confirm("Great, pomodoro " . g:pomodoro_name . " #" . s:pomodoro_count . " is finished!\nNow, take a break for " .
-                \ g:pomodoro_break_duration . " minutes.", "&OK")
+                \ s:pomodoro_break_duration . " minutes.", "&OK")
 
     let g:pomodoro_break_at = localtime()
     let g:pomodoro_started = 2
@@ -51,8 +52,8 @@ function! pomodorohandlers#pause(name,timer)
     call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . g:pomodoro_name . " #" . s:pomodoro_count . " break started.")
 
 
-    let g:pomodoro_run_timer = timer_start(g:pomodoro_break_duration * 60 * 1000,
-                \ function('pomodorohandlers#restart', [a:name, g:pomodoro_break_duration]))
+    let g:pomodoro_run_timer = timer_start(s:pomodoro_break_duration * 60 * 1000,
+                \ function('pomodorohandlers#restart', [a:name, s:pomodoro_break_duration]))
 endfunction
 
 
@@ -90,4 +91,8 @@ endfunction
 
 function! pomodorohandlers#get_pomodoro_count()
     return s:pomodoro_count
+endfunction
+
+function! pomodorohandlers#get_pomodoro_break_duration()
+    return s:pomodoro_break_duration
 endfunction

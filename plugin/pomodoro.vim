@@ -52,7 +52,6 @@ let s:pomodoro_secret = rand()
 
 call pomodorohandlers#get_secret(s:pomodoro_secret)
 
-let g:pomodoro_break_duration = g:pomodoro_short_break
 let g:pomodoro_name = ''
 let g:pomodoro_interrupted = 0
 
@@ -112,7 +111,7 @@ function! PomodoroStatus(full)
         else
             let the_status = "Pomodoro break started"
         endif
-        let the_status .= pomodorocommands#get_remaining(g:pomodoro_break_duration, g:pomodoro_break_at)
+        let the_status .= pomodorocommands#get_remaining(pomodorohandlers#get_pomodoro_break_duration(), g:pomodoro_break_at)
     endif
 
     if a:full
