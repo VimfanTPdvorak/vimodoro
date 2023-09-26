@@ -22,12 +22,6 @@ endfunction
 
 
 function! pomodorohandlers#pause(name,timer)
-    if a:name == ''
-        let g:pomodoro_name = '[Miscellaneous Task]'
-    else
-        let g:pomodoro_name = a:name
-    endif
-
     call pomodorocommands#notify()
 
     AirlineRefresh
@@ -41,15 +35,15 @@ function! pomodorohandlers#pause(name,timer)
     call pomodorocommands#logger("g:pomodoro_debug_file", "s:pomodoro_count = " . s:pomodoro_count)
     call pomodorocommands#logger("g:pomodoro_debug_file", "s:pomodoro_break_duration = " . s:pomodoro_break_duration)
 
-    let choice = confirm("Great, pomodoro " . g:pomodoro_name . " #" . s:pomodoro_count . " is finished!\nNow, take a break for " .
+    let choice = confirm("Great, pomodoro " . a:name . " #" . s:pomodoro_count . " is finished!\nNow, take a break for " .
                 \ s:pomodoro_break_duration . " minutes.", "&OK")
 
     let g:pomodoro_break_at = localtime()
     let g:pomodoro_started = 2
 
-    call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . g:pomodoro_name . " #" . s:pomodoro_count .
+    call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . a:name . " #" . s:pomodoro_count .
                 \ " focus ended. Duration: " . pomodorocommands#calculate_duration(g:pomodoro_started_at, localtime()) . ".")
-    call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . g:pomodoro_name . " #" . s:pomodoro_count . " break started.")
+    call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . a:name . " #" . s:pomodoro_count . " break started.")
 
 
     let g:pomodoro_run_timer = timer_start(s:pomodoro_break_duration * 60 * 1000,
