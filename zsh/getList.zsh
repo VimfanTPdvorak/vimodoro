@@ -42,24 +42,29 @@ apiKey=$VIM_POMODORO_RTM_API_KEY
 authToken=$VIM_POMODORO_RTM_TOKEN
 sharedSecret=$VIM_POMODORO_RTM_SHARED_SECRET
 
+filter="dueBefore:tomorrow AND status:incomplete"
+
 function RTMSign {
     params=$1
     echo $(md5 -q -s $sharedSecret$params)
 }
 
 function RTMGetList {
-    apiSig=$(RTMSign "api_key"$apiKey"auth_token"$authToken"formatjsonmethodrtm.tasks.getList")
-    response=$(curl -s "$rtmREST?api_key=$apiKey&format=json&method=rtm.tasks.getList&auth_token=$authToken&&api_sig=$apiSig")
+    apiSig=$(RTMSign "api_key"$apiKey"auth_token"$authToken"filter"$filter"formatjsonmethodrtm.tasks.getList")
+    filter=$(echo $filter|sed 's/\ /%20/g')
+    response=$(curl -s "$rtmREST?api_key=$apiKey&format=json&method=rtm.tasks.getList&filter=$filter&auth_token=$authToken&&api_sig=$apiSig")
+    response=$(echo $response|awk '{ printf "%s", $0 } END { print "" }')
     if [[ -n $(echo $response|grep "\"stat\":") ]];then
         if [[ $(echo $response|jq ".rsp.stat") = "\"ok\"" ]];then
             echo $response # TODO: Remove this when no longer needed
             # rtmToken=$(echo $response|jq ".rsp.auth.token"|sed 's/"//g')
         else
             # TODO: Do something meaningful
+            echo "Something went wrong. We got this response from RTM when calling its API."
             echo $response
         fi
     else
-        echo "Something went wrong. We got this response from RTM when calling its API."
+        echo "Something went wrong with the CURL command."
         echo $response
     fi
 }
