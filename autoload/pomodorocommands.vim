@@ -13,18 +13,18 @@ let g:loaded_autoload_pomodorocommands = 1
 
 function! pomodorocommands#notify()
     if exists("g:pomodoro_work_end_notification_cmd")
-        if g:pomodoro_started == 1 " Pomodoro work done.
+        if GetPomodoroState() == 1 " Pomodoro work done.
             call system(g:pomodoro_work_end_notification_cmd)
         endif
     endif
     if exists("g:pomodoro_break_end_notification_cmd")
-        if g:pomodoro_started == 2 " Pomodoro break done.
+        if GetPomodoroState() == 2 " Pomodoro break done.
             call system(g:pomodoro_break_end_notification_cmd)
         endif
     endif
     if exists("g:pomodoro_notification_cmd")
-        if g:pomodoro_started == 1 && !exists("g:pomodoro_work_end_notification_cmd") ||
-                g:pomodoro_started == 2 && !exists("g:pomodoro_break_end_notification_cmd")
+        if GetPomodoroState() == 1 && !exists("g:pomodoro_work_end_notification_cmd") ||
+                GetPomodoroState() == 2 && !exists("g:pomodoro_break_end_notification_cmd")
             call system(g:pomodoro_notification_cmd)
         endif
     endif

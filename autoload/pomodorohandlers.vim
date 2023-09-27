@@ -11,13 +11,16 @@ endif
 
 let g:loaded_autoload_pomodorohandlers = 1
 
-let s:pomodoro_secret = 0
-
 let s:pomodoro_count = 1
 let s:pomodoro_break_duration = g:pomodoro_short_break
 
-function! pomodorohandlers#get_secret(the_secret)
-    let s:pomodoro_secret = a:the_secret
+function! pomodorohandlers#set_secret(the_secret)
+    if !exists("s:pomodoro_secret")
+        let s:pomodoro_secret = a:the_secret
+        call pomodorocommands#logger("g:pomodoro_debug_file", "Secret has been set.")
+    else
+        call pomodorocommands#logger("g:pomodoro_debug_file", "pomodorohandlers#set_secret: Do nothing.")
+    endif
 endfunction
 
 
@@ -38,11 +41,11 @@ function! pomodorohandlers#pause(name,timer)
     let choice = confirm("Great, pomodoro " . a:name . " #" . s:pomodoro_count . " is finished!\nNow, take a break for " .
                 \ s:pomodoro_break_duration . " minutes.", "&OK")
 
-    let g:pomodoro_break_at = localtime()
-    let g:pomodoro_started = 2
+    call SetPomodoroBreakAt(s:pomodoro_secret)
+    call SetPomodoroState(s:pomodoro_secret, 2)
 
     call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . a:name . " #" . s:pomodoro_count .
-                \ " focus ended. Duration: " . pomodorocommands#calculate_duration(g:pomodoro_started_at, localtime()) . ".")
+                \ " focus ended. Duration: " . pomodorocommands#calculate_duration(GetPomodoroStartedAt(1), localtime()) . ".")
     call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . a:name . " #" . s:pomodoro_count . " break started.")
 
 
@@ -54,7 +57,7 @@ endfunction
 function! pomodorohandlers#restart(name, duration, timer)
     call pomodorocommands#notify()
 
-    let g:pomodoro_started = 0
+    call SetPomodoroState(s:pomodoro_secret, 0)
 
     AirlineRefresh
 
@@ -63,7 +66,7 @@ function! pomodorohandlers#restart(name, duration, timer)
                 \ "&Yes\n&No")
 
     call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . a:name . " #" . s:pomodoro_count . " break ended. " .
-                \ "Duration: " . pomodorocommands#calculate_duration(g:pomodoro_break_at, localtime()) . ".")
+                \ "Duration: " . pomodorocommands#calculate_duration(GetPomodoroStartedAt(2), localtime()) . ".")
 
     if choice == 1
         if s:pomodoro_count < 4
@@ -73,7 +76,7 @@ function! pomodorohandlers#restart(name, duration, timer)
         endif
         exec "PomodoroStart " . a:name
     else
-        let g:pomodoro_interrupted = 0
+        call PomodoroUninterrupted(s:pomodoro_secret)
     endif
 endfunction
 
