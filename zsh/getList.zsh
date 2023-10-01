@@ -38,9 +38,9 @@
 
 rtmREST=https://api.rememberthemilk.com/services/rest/
 
-apiKey=$VIM_POMODORO_RTM_API_KEY
-authToken=$VIM_POMODORO_RTM_TOKEN
-sharedSecret=$VIM_POMODORO_RTM_SHARED_SECRET
+apiKey=$VIMODORO_RTM_API_KEY
+authToken=$VIMODORO_RTM_TOKEN
+sharedSecret=$VIMODORO_RTM_SECRET
 
 filter="dueBefore:tomorrow AND status:incomplete"
 
