@@ -15,7 +15,7 @@ let s:rtmREST = "https://api.rememberthemilk.com/services/rest/"
 let s:plugin_root = expand("<sfile>:h:h")
 let s:prnTaskList_py = s:plugin_root . "/py/prnTaskList.py"
 
-command! VimodoroRTM call s:vimodoroGetTasksList("dueBefore:tomorrow AND status:incomplete")<cr>
+command! VimodoroRTM call s:vimodoroGetTasksList("dueBefore:tomorrow AND status:incomplete")
 
 function! s:vimodoroGetTasksList(rtmFilter)
     " TODO: Handling the creation of and/or set focus to the RTM tasks list
