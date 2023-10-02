@@ -10,16 +10,30 @@ endif
 
 let g:vimodoro_loaded = 1
 
-let s:rtmREST = "https://api.rememberthemilk.com/services/rest/"
+if !exists('g:vimodoro_SplitHeight')
+    let g:vimodoro_SplitHeight = 20
+endif
 
-let s:plugin_root = expand("<sfile>:h:h")
-let s:prnTaskList_py = s:plugin_root . "/py/prnTaskList.py"
+if !exists('g:vimodoro_WindowLayout')
+    let g:vimodoro_WindowLayout = 1
+endif
 
-command! VimodoroRTM call s:vimodoroGetTasksList("dueBefore:tomorrow AND status:incomplete")
+" Show cursorline
+if !exists('g:vimodoro_CursorLine')
+    let g:vimodoro_CursorLine = 1
+endif
 
-function! s:vimodoroGetTasksList(rtmFilter)
-    " TODO: Handling the creation of and/or set focus to the RTM tasks list
-    " window.
-    execute "py3 sys.argv = " . "['" . a:rtmFilter . "']"
-    execute "py3file " . s:prnTaskList_py
-endfunction
+" If set, let vimodoro window get focus after being opened, otherwise
+" focus will stay in current window.
+if !exists('g:vimodoro_SetFocusWhenToggle')
+    let g:vimodoro_SetFocusWhenToggle = 1
+endif
+
+command! VimodoroRTM call vimodoro#VimodoroToggle()
+
+"command! VimodoroRTM call s:vimodoroGetTasksList("dueBefore:tomorrow AND status:incomplete")
+"
+"function! s:vimodoroGetTasksList(rtmFilter)
+"    " TODO: Handling the creation of and/or set focus to the RTM tasks list
+"    " window.
+"endfunction
