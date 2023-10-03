@@ -29,7 +29,7 @@ if !exists('g:vimodoro_SetFocusWhenToggle')
     let g:vimodoro_SetFocusWhenToggle = 1
 endif
 
-command! VimodoroRTM call vimodoro#VimodoroToggle()
+command! VimodoroRTM call pomodorohandlers#VimodoroToggle()
 
 "command! VimodoroRTM call s:vimodoroGetTasksList("dueBefore:tomorrow AND status:incomplete")
 "

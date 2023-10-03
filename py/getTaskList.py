@@ -44,26 +44,30 @@ def RTM_GetTasksList(rtmFilter):
     vim.command("echo '::Getting Tasks...'")
     vim.command("redraw")
     vim.command("let self.tasklist = []")
-    vim.command("let self.taskIDs = []")
+    vim.command("let s:taskIDs = {}")
     apiSig = RTM_Sign("api_key"+apiKey+"auth_token"+authToken+"filter"+rtmFilter+"formatjsonmethodrtm.tasks.getList")
     rtmFilter = rtmFilter.replace(" ", "%20")
     response = requests.get(f"{rtmREST}?api_key={apiKey}&format=json&method=rtm.tasks.getList&filter={rtmFilter}&auth_token={authToken}&api_sig={apiSig}")
     response = response.text
     tasks = json.loads(response) # Parse response as JSON
+    idx = 0
     if "stat" in response:
         if tasks["rsp"]["stat"] == "ok":
             tl = tasks["rsp"]["tasks"]["list"]
             for i in range(len(tl)):
                 if i > 0:
                     vim.command("call insert(self.tasklist, '', len(self.tasklist))")
-                    vim.command("let self.taskIDs += [['0','0','0']]")
                 lsID = tl[i]['id']
                 vim.command("call insert(self.tasklist, '#" + RTM_GetListName(lsID) + "', len(self.tasklist))")
-                vim.command("let self.taskIDs += [['" + lsID + "','0','0']]")
                 ts = tl[i]['taskseries']
                 for t in range(len(ts)):
-                    vim.command("call insert(self.tasklist, '" + ts[t]['name'] + "', len(self.tasklist))")
-                    vim.command("let self.taskIDs += [['" + lsID +"','" + ts[t]['id'] + "','" + ts[t]['task'][0]['id'] + "' ]]")
+                    idx += 1
+                    key = str(idx).zfill(3)
+                    vim.command("call insert(self.tasklist, '" + key + ". " + ts[t]['name'] + "', len(self.tasklist))")
+                    vim.command("let s:taskIDs['" + key + "'] = " + \
+                            "{'lsID': '" + lsID +"', " + \
+                            "'tsID': '" + ts[t]['id'] + "', " + \
+                            "'ID': '" + ts[t]['task'][0]['id'] + "'}")
             vim.command("echo ''")
         else:
             # TODO: Handle it gracefully
