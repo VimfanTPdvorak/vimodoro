@@ -312,7 +312,7 @@ function! s:vimodoro.ActionStart() abort
     let s:key = matchstr(getline('.'), '^\d\{3}')
     if has_key(s:taskIDs, s:key)
         let s:taskname = '[🐮 ' . substitute(matchstr(getline('.'), '\.\s.*$'), '^\.\s', '', '') . ']'
-        let choice = confirm("[" . s:taskname . "]\nWant to start working on the selected task?", "&Yes\n&No")
+        let choice = confirm(s:taskname . "\nWant to start working on the selected task?", "&Yes\n&No")
         if choice == 1
             call self.Toggle()
             exec "PomodoroStart " . s:taskname
