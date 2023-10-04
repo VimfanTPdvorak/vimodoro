@@ -14,7 +14,6 @@
 rtmREST=https://api.rememberthemilk.com/services/rest/
 rtmAuthURL=https://www.rememberthemilk.com/services/auth/
 
-# TODO: Should keep secret
 sharedSecret=$1
 apiKey=$2
 rtmFrob=""
@@ -27,12 +26,14 @@ function RTMSign {
 function RTMGetToken {
     apiSig=$(RTMSign "api_key"$apiKey"formatjsonfrob"$rtmFrob"methodrtm.auth.getToken")
     response=$(curl -s "$rtmREST?api_key=$apiKey&format=json&method=rtm.auth.getToken&frob=$rtmFrob&api_sig=$apiSig")
-    # response='{"rsp":{"stat":"ok","auth":{"token":"theToken","perms":"delete","user":{"id":"12345","username":"userName","fullname":"Billy Chamberlain"}}}}'
     if [[ -n $(echo $response|grep "\"stat\":") ]];then
         if [[ $(echo $response|jq ".rsp.stat") = "\"ok\"" ]];then
             echo $response # TODO: Remove this when no longer needed
             rtmToken=$(echo $response|jq ".rsp.auth.token"|sed 's/"//g')
-            echo "Add this line in your .zshrc: export VIM_POMODORO_RTM_TOKEN=$rtmToken"
+            echo "Add these lines in your .zshrc:"
+            echo "export VIMODORO_RTM_API_KEY=$apiKey"
+            echo "export VIMODORO_RTM_SECRET=$sharedSecret"
+            echo "export VIMODORO_RTM_TOKEN=$rtmToken"
         else
             # TODO: Do something meaningful
             echo $response
@@ -46,7 +47,6 @@ function RTMGetToken {
 function RTMAuthentication {
     apiSig=$(RTMSign "api_key"$apiKey"formatjsonmethodrtm.auth.getFrob")
     response=$(curl -s "$rtmREST?api_key=$apiKey&format=json&method=rtm.auth.getFrob&api_sig=$apiSig")
-    # response='{"rsp":{"stat":"ok","frob":"c8ef2ceocca79e018a8130eb62ea0e0ee12b4ad"}}'
 
     if [[ -n $(echo $response|grep "\"stat\":") ]];then
         if [[ $(echo $response|jq ".rsp.stat") = "\"ok\"" ]];then
@@ -78,5 +78,11 @@ function RTMAuthentication {
     fi
 }
 
+which jq > /dev/null
+[[ $? -eq 0 ]];has_jq=true || has_jq=false
 
-RTMAuthentication
+if [[ "$has_jq" == true ]];then
+    RTMAuthentication
+else
+    echo "This script requires 'jq'. Please install it prior to proceeding."
+fi
