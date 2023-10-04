@@ -26,7 +26,9 @@ endfunction
 function! pomodorohandlers#pause(name,timer)
     call pomodorocommands#notify()
 
-    AirlineRefresh
+    " Temporarily set the status to inactive so that the SetPomodoroState() will
+    " stop the Pomodoro timer.
+    call SetPomodoroState(s:pomodoro_secret, 0)
 
     if s:pomodoro_count == 4
         let s:pomodoro_break_duration = g:pomodoro_long_break
@@ -37,38 +39,57 @@ function! pomodorohandlers#pause(name,timer)
     call pomodorocommands#logger("g:pomodoro_debug_file", "s:pomodoro_count = " . s:pomodoro_count)
     call pomodorocommands#logger("g:pomodoro_debug_file", "s:pomodoro_break_duration = " . s:pomodoro_break_duration)
 
-    let choice = confirm("Great, pomodoro " . a:name . " #" . s:pomodoro_count . " is finished!\nNow, take a break for " .
-                \ s:pomodoro_break_duration . " minutes.", "&OK")
+    let answer = ''
 
-    call SetPomodoroBreakAt(s:pomodoro_secret)
-    call SetPomodoroState(s:pomodoro_secret, 2)
+    while answer != "YES" && answer != "INTERRUPTED" && answer != "DONE"
+        redraw
+        let answer = input("Great, " . a:name . " #" . s:pomodoro_count . " focus session has ended. Take a break or what's next?\n
+                    \Type \"YES\" = Take a " . s:pomodoro_break_duration . "m break,\n
+                    \Type \"INTERRUPTED\" = An interruption. Stop the Pomodoro,\n
+                    \Type \"DONE\" = Stop the Pomodoro and mark the task as Done.\n
+                    \Your answer? ")
+    endwhile
 
-    call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . a:name . " #" . s:pomodoro_count .
-                \ " focus ended. Duration: " . pomodorocommands#calculate_duration(GetPomodoroStartedAt(1), localtime()) . ".")
-    call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . a:name . " #" . s:pomodoro_count . " break started.")
+    " Set the Pomodoro state to its original state, that is 'focus' state.
+    call SetPomodoroState(s:pomodoro_secret, 1)
 
+    if answer == "YES"
+        call SetPomodoroBreakAt(s:pomodoro_secret) " Track break at time
+        call SetPomodoroState(s:pomodoro_secret, 2) " Switch to break state
 
-    let g:pomodoro_run_timer = timer_start(s:pomodoro_break_duration * 60 * 1000,
-                \ function('pomodorohandlers#restart', [a:name, s:pomodoro_break_duration]))
+        call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . a:name . " #" . s:pomodoro_count .
+                    \ " focus ended. Duration: " . pomodorocommands#calculate_duration(GetPomodoroStartedAt(1), localtime()) . ".")
+        call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . a:name . " #" . s:pomodoro_count . " break started.")
+
+        " Start the break timer
+        call StartBreakTimer(s:pomodoro_secret, a:name, s:pomodoro_break_duration)
+    elseif answer == "INTERRUPTED"
+        call PomodoroInterrupted(s:pomodoro_secret)
+    elseif answer == "DONE"
+        call s:vimodoro.rtm_task_complete()
+    endif
 endfunction
 
 function! pomodorohandlers#restart(name, duration, timer)
     call pomodorocommands#notify()
 
+    " Temporarily set the status to inactive so that the SetPomodoroState() will
+    " stop the Pomodoro timer.
     call SetPomodoroState(s:pomodoro_secret, 0)
-
-    AirlineRefresh
 
     let answer = ''
 
-    while answer != "YES" && answer != "NO" && answer != "DONE"
+    while answer != "YES" && answer != "INTERRUPTED" && answer != "DONE"
         redraw
-        let answer = input(a:duration . "m break is over... Feeling rested?\nWant to start another Pomodoro?\n
-                    \Type \"YES\" = Start another Pomodoro\n
-                    \Type \"NO\" = Just stop the Pomodoro\n
+        let answer = input(a:name . " " . a:duration . "m break is over... Feeling rested?\nWant to start another Pomodoro?\n
+                    \Type \"YES\" = Yes. I'm ready to continue working on the task,\n
+                    \Type \"INTERRUPTED\" = An interruption. Stop the Pomodoro,\n
                     \Type \"DONE\" = Stop the Pomodoro and mark the task as Done.\n
                     \Your answer? ")
     endwhile
+
+    " Set the Pomodoro state to its original state, that is 'break' state.
+    call SetPomodoroState(s:pomodoro_secret, 2)
 
     call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . a:name . " #" . s:pomodoro_count . " break ended. " .
                 \ "Duration: " . pomodorocommands#calculate_duration(GetPomodoroStartedAt(2), localtime()) . ".")
@@ -80,17 +101,23 @@ function! pomodorohandlers#restart(name, duration, timer)
             let s:pomodoro_count = 1
         endif
         exec "PomodoroStart " . a:name
-    elseif answer == "NO"
-        call PomodoroUninterrupted(s:pomodoro_secret)
+    elseif answer == "INTERRUPTED"
+        call PomodoroInterrupted(s:pomodoro_secret)
     elseif answer == "DONE"
-        call PomodoroUninterrupted(s:pomodoro_secret)
         call s:vimodoro.rtm_task_complete()
     endif
 endfunction
 
-function! pomodorohandlers#reset_pomodoro_count(the_secret)
+function! pomodorohandlers#rtm_task_complete(the_secret)
     if a:the_secret == s:pomodoro_secret
-        let s:pomodoro_count = 1
+        call s:vimodoro.rtm_task_complete()
+    endif
+endfunction
+
+function! pomodorohandlers#rtm_reset_if_non_rtm_task(the_secret, name)
+    if a:the_secret == s:pomodoro_secret && s:key != '' && a:name !=# s:taskname
+        let s:taskname = ''
+        let s:key = ''
     endif
 endfunction
 
@@ -513,6 +540,7 @@ function! s:vimodoro.rtm_task_complete() abort
     call pomodorocommands#logger("g:pomodoro_debug_file", "s:taskname = " . s:taskname)
     call pomodorocommands#logger("g:pomodoro_debug_file", "GetPomodoroName() = " . GetPomodoroName())
     call pomodorocommands#logger("g:pomodoro_debug_file", "s:taskname = GetPomodoroName() : " . (GetPomodoroName() == s:taskname))
+
     if has_key(s:taskIDs, s:key) && GetPomodoroName() == s:taskname
         call pomodorocommands#logger("g:pomodoro_debug_file",
                     \ "py3 sys.argv = " .
@@ -524,7 +552,22 @@ function! s:vimodoro.rtm_task_complete() abort
                     \ \"" . s:taskIDs[s:key]['tsID'] . "\",
                     \ \"" . s:taskIDs[s:key]['ID'] . "\"]"
         execute "py3file " . s:setTaskComplete_py
+        " TODO: Should check if the mark as done was a success to decide wether
+        " or not to reset the s:key variable. Not really sure yet.
     endif
+
+    " This echo has been done in the above python script, but I don't know why
+    " it didn't show up or got cleared.
+    echo "The task " . GetPomodoroName() . " has been marked as done."
+
+    call PomodoroUninterrupted(s:pomodoro_secret)
+
+    " Re-initiate these two variables to an empty string so that when starting a
+    " new task, the task name will be empty and calling this method won't
+    " calling the rtm.tasks.complete method since the s:key has been set to
+    " blank -- the task was not interrupted, nor still WIP.
+    let s:taskname = ''
+    let s:key = ''
 endfunction
 
 function! s:exec(cmd) abort

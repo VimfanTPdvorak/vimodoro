@@ -29,11 +29,4 @@ if !exists('g:vimodoro_SetFocusWhenToggle')
     let g:vimodoro_SetFocusWhenToggle = 1
 endif
 
-command! VimodoroRTM call pomodorohandlers#VimodoroToggle()
-
-"command! VimodoroRTM call s:vimodoroGetTasksList("dueBefore:tomorrow AND status:incomplete")
-"
-"function! s:vimodoroGetTasksList(rtmFilter)
-"    " TODO: Handling the creation of and/or set focus to the RTM tasks list
-"    " window.
-"endfunction
+command! RTM call pomodorohandlers#VimodoroToggle()
