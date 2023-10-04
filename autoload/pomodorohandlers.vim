@@ -147,7 +147,7 @@ let s:taskIDs = {}
 " Help text
 let s:helpmore = ['"   ===== Hotkeys =====']
 
-if !g:undotree_HelpLine
+if !g:vimodoro_HelpLine
     let s:helpless = []
 else
     let s:helpless = ['" Press ? for help.']
@@ -212,7 +212,6 @@ function! s:vimodoro.Init() abort
     let self.height = g:vimodoro_SplitHeight
     let self.targetid = -1
     let self.targetBufnr = -1
-    let self.rawtasklist = {}  "data passed from undotree()
     let self.tree = {}     "data converted to internal format.
     let self.seq_last = -1
     let self.save_last = -1
@@ -448,38 +447,12 @@ function! s:vimodoro.Update() abort
         "update vimodoro,set focus
         if self.targetBufnr == bufnr('%')
             let self.targetid = w:vimodoro_id
-            let newrawtasklist = undotree()
-            if self.rawtasklist == newrawtasklist
-                return
-            endif
-
-            " same buffer, but seq changed.
-            if newrawtasklist.seq_last == self.seq_last
-                " call s:log("vimodoro.Update() update seqs")
-                let self.rawtasklist = newrawtasklist
-                "call self.ConvertInput(0) "only update seqs.
-                "if (self.seq_cur == self.seq_cur_bak) &&
-                "            \(self.seq_curhead == self.seq_curhead_bak)&&
-                "            \(self.seq_newhead == self.seq_newhead_bak)&&
-                "            \(self.save_last == self.save_last_bak)
-                "    return
-                "endif
-                call self.SetFocus()
-                call self.UpdateDiff()
-                return
-            endif
         endif
     endif
     " call s:log("vimodoro.Update() update whole tree")
 
     let self.targetBufnr = bufnr('%')
     let self.targetid = w:vimodoro_id
-    if emptybuf " Show an empty undo tree instead of do nothing.
-        let self.rawtasklist = {'seq_last':0,'entries':[],'time_cur':0,'save_last':0,'synced':1,'save_cur':0,'seq_cur':0}
-    else
-        let self.rawtasklist = undotree()
-    endif
-    let self.seq_last = self.rawtasklist.seq_last
     let self.seq_cur = -1
     let self.seq_curhead = -1
     let self.seq_newhead = -1
@@ -528,7 +501,7 @@ function! s:vimodoro.AppendHelp() abort
         endfor
         call append(0,s:helpmore)
     else
-        if g:undotree_HelpLine
+        if g:vimodoro_HelpLine
             call append(0,'')
         endif
         call append(0,s:helpless)
