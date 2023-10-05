@@ -44,8 +44,6 @@ if !exists('g:pomodoro_status_refresh_duration')
     let g:pomodoro_status_refresh_duration = 15 " In second
 endif
 
-let s:pomodoro_timer_duration = g:pomodoro_status_refresh_duration * 1000 "In msec
-
 if !exists('g:pomodoro_icon_inactive')
     let g:pomodoro_icon_inactive = '🤖'
 endif
@@ -104,8 +102,15 @@ let g:pomodoro_loaded = 1
 
 let s:pomodoro_secret = rand()
 
-let s:pomodoro_run_timer = 0
+" This timer duration used for redrawing the displayed time, where it also used
+" to display the time remaining when the Pomodoro is running.
+let s:time_timer_duration = g:pomodoro_status_refresh_duration * 1000 "In msec
+" This is the timer variable that responsible for redrawing the datetime and
+" Pomodoro remaining text.
 let s:pomodoro_show_time_timer = 0
+
+" This timer variable is used for managing the Pomodoro Focus and Break timer.
+let s:pomodoro_run_timer = 0
 
 call pomodorohandlers#set_secret(s:pomodoro_secret)
 
@@ -213,7 +218,7 @@ function! s:PomodoroGo(name)
     if s:pomodoro_display_time == 0
         call pomodorocommands#logger("g:pomodoro_debug_file", "Set pomodoro_display_time to 1.")
         let s:pomodoro_display_time = 1
-        let s:pomodoro_show_time_timer = timer_start(s:pomodoro_timer_duration,
+        let s:pomodoro_show_time_timer = timer_start(s:time_timer_duration,
                     \ 's:PomodoroRefreshStatusLine', {'repeat': -1})
     endif
 
@@ -256,7 +261,7 @@ function! PomodoroToggleDisplayTime(showTime)
     let s:pomodoro_display_time = !a:showTime
     if s:pomodoro_display_time == 1
         let g:airline_section_y = g:pomodoro_time_format
-        call pomodorocommands#logger("g:pomodoro_debug_file", "calling timer_start(s:pomodoro_timer_duration)")
+        call pomodorocommands#logger("g:pomodoro_debug_file", "calling timer_start(s:time_timer_duration)")
         call s:PomodoroStartsShowTimeTimer(0)
     else
         let g:airline_section_y =
@@ -287,7 +292,7 @@ endfunction
 
 function! s:PomodoroStartsShowTimeTimer(timer)
     call s:PomodoroRefreshStatusLine(0)
-    let s:pomodoro_show_time_timer = timer_start(s:pomodoro_timer_duration,
+    let s:pomodoro_show_time_timer = timer_start(s:time_timer_duration,
                 \ 's:PomodoroRefreshStatusLine',
                 \ {'repeat': -1})
 endfunction
@@ -364,9 +369,6 @@ function! SetPomodoroState(the_secret, state)
     if a:the_secret == s:pomodoro_secret
         let s:pomodoro_started = a:state
         call pomodorocommands#logger("g:pomodoro_debug_file", "Pomodoro State has been set.")
-        if a:state == 0
-            call timer_stop(s:pomodoro_run_timer)
-        endif
         call s:PomodoroRefreshStatusLine(0)
     else
         call pomodorocommands#logger("g:pomodoro_debug_file", "SetPomodoroState: Do nothing.")
@@ -398,6 +400,6 @@ function! GetPomodoroDisplayTime()
     return s:pomodoro_display_time
 endfunction
 
-call pomodorocommands#logger("g:pomodoro_debug_file", "calling timer_start(s:pomodoro_timer_duration) for the first time.")
+call pomodorocommands#logger("g:pomodoro_debug_file", "calling timer_start(s:time_timer_duration) for the first time.")
 
 call s:PomodoroStartsShowTimeTimer(0)
