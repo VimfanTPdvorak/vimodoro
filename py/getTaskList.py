@@ -63,7 +63,7 @@ def RTM_GetTasksList(rtmFilter):
                 for t in range(len(ts)):
                     idx += 1
                     key = str(idx).zfill(3)
-                    vim.command("call insert(self.tasklist, '" + key + ". " + ts[t]['name'] + "', len(self.tasklist))")
+                    vim.command("call insert(self.tasklist, '" + key + ". " + ts[t]['name'].replace("'", "''") + "', len(self.tasklist))")
                     vim.command("let s:taskIDs['" + key + "'] = " + \
                             "{'lsID': '" + lsID +"', " + \
                             "'tsID': '" + ts[t]['id'] + "', " + \
