@@ -268,10 +268,7 @@ function! g:PomodoroStop()
     if s:vimodoro_state == s:vimodoro_states.focus || s:vimodoro_state == s:vimodoro_states.break
         PomodoroStatus
 
-        let state_bak = s:vimodoro_state
-        let s:vimodoro_state = 0
-
-        call s:PomodoroRefreshStatusLine(0)
+        call timer_pause(s:pomodoro_run_timer, 1)
 
         let choice = confirm("You're stopping the running Pomodoro because:\n
                     \(a) The task is done\n
@@ -279,12 +276,14 @@ function! g:PomodoroStop()
                     \(c) I change my mind, please continue the running Pomodoro.",
                     \"&a\n&b\n&c", 3, '')
 
-        let s:vimodoro_state = state_bak
-
         if choice == 1
             call pomodorohandlers#rtm_task_complete(s:pomodoro_secret)
+            call timer_stop(s:pomodoro_run_timer)
         elseif choice == 2
             call PomodoroInterrupted(s:pomodoro_secret)
+            call timer_stop(s:pomodoro_run_timer)
+        else
+            call timer_pause(s:pomodoro_run_timer, 0)
         endif
     endif
 endfunction
