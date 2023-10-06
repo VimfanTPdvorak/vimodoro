@@ -14,6 +14,15 @@ let g:loaded_autoload_pomodorohandlers = 1
 let s:pomodoro_count = 1
 let s:pomodoro_break_duration = g:pomodoro_short_break
 
+" s:vimodoro_state
+" ----------------
+" inactive: Vimodoro is inactive
+" focus   : Vimodoro is actived and in focus mode/state
+" break   : Vimodoro is actived and in break mode/state
+" focus_ended: Vimodoro focus session ended and awaited for user action
+" break_ended: Vimodoro break session ended and awaited for user action
+const s:vimodoro_states = { 'inactive': 0, 'focus': 1, 'break': 2, 'focus_ended': 3, 'break_ended': 4 }
+
 function! pomodorohandlers#set_secret(the_secret)
     if !exists("s:pomodoro_secret")
         let s:pomodoro_secret = a:the_secret
@@ -26,9 +35,7 @@ endfunction
 function! pomodorohandlers#pause(name,timer)
     call pomodorocommands#notify()
 
-    " Temporarily set the status to inactive so that the SetPomodoroState() will
-    " stop the Pomodoro timer.
-    call SetPomodoroState(s:pomodoro_secret, 0)
+    call SetPomodoroState(s:pomodoro_secret, s:vimodoro_states.focus_ended)
 
     if s:pomodoro_count == 4
         let s:pomodoro_break_duration = g:pomodoro_long_break
@@ -38,6 +45,9 @@ function! pomodorohandlers#pause(name,timer)
 
     call pomodorocommands#logger("g:pomodoro_debug_file", "s:pomodoro_count = " . s:pomodoro_count)
     call pomodorocommands#logger("g:pomodoro_debug_file", "s:pomodoro_break_duration = " . s:pomodoro_break_duration)
+
+    call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . a:name . " #" . s:pomodoro_count .
+                \ " focus session ended. Waiting for user's action...")
 
     let answer = ''
 
@@ -50,12 +60,9 @@ function! pomodorohandlers#pause(name,timer)
                     \Your answer? ")
     endwhile
 
-    " Set the Pomodoro state to its original state, that is 'focus' state.
-    call SetPomodoroState(s:pomodoro_secret, 1)
-
     if answer == "YES"
         call SetPomodoroBreakAt(s:pomodoro_secret) " Track break at time
-        call SetPomodoroState(s:pomodoro_secret, 2) " Switch to break state
+        call SetPomodoroState(s:pomodoro_secret, s:vimodoro_states.break)
 
         call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . a:name . " #" . s:pomodoro_count .
                     \ " focus ended. Duration: " . pomodorocommands#calculate_duration(GetPomodoroStartedAt(1), localtime()) . ".")
@@ -73,9 +80,10 @@ endfunction
 function! pomodorohandlers#restart(name, duration, timer)
     call pomodorocommands#notify()
 
-    " Temporarily set the status to inactive so that the SetPomodoroState() will
-    " stop the Pomodoro timer.
-    call SetPomodoroState(s:pomodoro_secret, 0)
+    call SetPomodoroState(s:pomodoro_secret, s:vimodoro_states.break_ended)
+
+    call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . a:name . " #" . s:pomodoro_count .
+                \ " break session ended. Waiting for user's action...")
 
     let answer = ''
 
@@ -87,9 +95,6 @@ function! pomodorohandlers#restart(name, duration, timer)
                     \Type \"DONE\" = Stop the Pomodoro and mark the task as Done.\n
                     \Your answer? ")
     endwhile
-
-    " Set the Pomodoro state to its original state, that is 'break' state.
-    call SetPomodoroState(s:pomodoro_secret, 2)
 
     call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . a:name . " #" . s:pomodoro_count . " break ended. " .
                 \ "Duration: " . pomodorocommands#calculate_duration(GetPomodoroStartedAt(2), localtime()) . ".")

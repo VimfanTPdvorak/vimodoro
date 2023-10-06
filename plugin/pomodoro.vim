@@ -28,6 +28,8 @@ if &cp || exists("g:pomodoro_loaded") && g:pomodoro_loaded
     finish
 endif
 
+let g:pomodoro_loaded = 1
+
 call pomodorocommands#logger("g:pomodoro_debug_file", "Loading pomodoro...")
 
 " User configurable variables
@@ -54,6 +56,14 @@ endif
 
 if !exists('g:pomodoro_icon_break')
     let g:pomodoro_icon_break = '🍕'
+endif
+
+if !exists('g:pomodoro_icon_focus_ended')
+    let g:pomodoro_icon_focus_ended = '🌭'
+endif
+
+if !exists('g:pomodoro_icon_break_ended')
+    let g:pomodoro_icon_break_ended = '🍏'
 endif
 
 if !exists('g:pomodoro_work_duration')
@@ -98,7 +108,19 @@ command! RTM call pomodorohandlers#VimodoroToggle()
 
 " Variables should not be touched by users
 
-let g:pomodoro_loaded = 1
+" s:vimodoro_state
+" ----------------
+" inactive   : Vimodoro is inactive
+" focus      : Vimodoro is actived and in focus mode/state
+" break      : Vimodoro is actived and in break mode/state
+" focus_ended: Vimodoro focus session ended and awaited for user action
+" break_ended: Vimodoro break session ended and awaited for user action
+const s:vimodoro_states = { 'inactive': 0, 'focus': 1, 'break': 2, 'focus_ended': 3, 'break_ended': 4 }
+let s:vimodoro_state = s:vimodoro_states.inactive
+
+let s:vimodoro_state_changed_time = 0
+
+let s:vimodoro_force_display_time = 0
 
 let s:pomodoro_secret = rand()
 
@@ -117,7 +139,6 @@ call pomodorohandlers#set_secret(s:pomodoro_secret)
 let s:pomodoro_name = ''
 let s:pomodoro_interrupted = 0
 
-let s:pomodoro_started = 0
 let s:pomodoro_started_at = -1
 let s:pomodoro_break_at = -1
 
@@ -152,26 +173,40 @@ if !exists("g:no_plugin_maps") || g:no_plugin_maps == 0
 endif
 
 function! PomodoroStatus(full)
-    if s:pomodoro_started == 0
+    if s:vimodoro_state == s:vimodoro_states.inactive
         silent! if exists('g:pomodoro_icon_inactive')
             let the_status =  g:pomodoro_icon_inactive
         else
             let the_status = "Pomodoro inactive"
         endif
-    elseif s:pomodoro_started == 1
+    elseif s:vimodoro_state == s:vimodoro_states.focus
         silent! if exists('g:pomodoro_icon_started')
             let the_status = repeat(g:pomodoro_icon_started, pomodorohandlers#get_pomodoro_count()) . " "
         else
             let the_status = "Pomodoro started"
         endif
         let the_status .= pomodorocommands#get_remaining(g:pomodoro_work_duration, s:pomodoro_started_at)
-    elseif s:pomodoro_started == 2
+    elseif s:vimodoro_state == s:vimodoro_states.break
         silent! if exists('g:pomodoro_icon_break')
             let the_status = repeat(g:pomodoro_icon_break, pomodorohandlers#get_pomodoro_count()) . " "
         else
             let the_status = "Pomodoro break started"
         endif
         let the_status .= pomodorocommands#get_remaining(pomodorohandlers#get_pomodoro_break_duration(), s:pomodoro_break_at)
+    elseif s:vimodoro_state == s:vimodoro_states.focus_ended
+        silent! if exists('g:pomodoro_icon_focus_ended')
+            let the_status = repeat(g:pomodoro_icon_focus_ended, pomodorohandlers#get_pomodoro_count()) . " "
+        else
+            let the_status = "Focus session has ended, and Vimodoro is waiting for your action."
+        endif
+        let the_status .= pomodorocommands#calculate_duration(s:vimodoro_state_changed_time, localtime())
+    elseif s:vimodoro_state == s:vimodoro_states.break_ended
+        silent! if exists('g:pomodoro_icon_break_ended')
+            let the_status = repeat(g:pomodoro_icon_break_ended, pomodorohandlers#get_pomodoro_count()) . " "
+        else
+            let the_status = "Break session has ended, and Vimodoro is waiting for your action."
+        endif
+        let the_status .= pomodorocommands#calculate_duration(s:vimodoro_state_changed_time, localtime())
     endif
 
     if a:full
@@ -183,7 +218,7 @@ endfunction
 
 function! s:PomodoroStart(name)
     call pomodorocommands#logger("g:pomodoro_debug_file", "Calling PomodoroStart")
-    if s:pomodoro_started == 0 " Pomodoro Inactive
+    if s:vimodoro_state == s:vimodoro_states.inactive || s:vimodoro_state == s:vimodoro_states.focus_ended || s:vimodoro_state == s:vimodoro_states.break_ended
         call s:PomodoroGo(a:name)
     else
         let choice = confirm("Do you really wanted to stop the current running Pomodoro and start a new one?", "&Yes\n&No")
@@ -209,7 +244,7 @@ function! s:PomodoroGo(name)
 
     let s:pomodoro_run_timer = timer_start(g:pomodoro_work_duration * 60 * 1000, function('pomodorohandlers#pause', [s:pomodoro_name]))
     let s:pomodoro_started_at = localtime()
-    let s:pomodoro_started = 1
+    let s:vimodoro_state = 1
 
     echom "Pomodoro " . s:pomodoro_name . " #" . pomodorohandlers#get_pomodoro_count() . " started at: " . strftime('%c', s:pomodoro_started_at)
 
@@ -230,11 +265,11 @@ function! s:PomodoroGo(name)
 endfunction
 
 function! g:PomodoroStop()
-    if s:pomodoro_started != 0 " Pomodoro Active (Started/Break)
+    if s:vimodoro_state == s:vimodoro_states.focus || s:vimodoro_state == s:vimodoro_states.break
         PomodoroStatus
 
-        let state_bak = s:pomodoro_started
-        let s:pomodoro_started = 0
+        let state_bak = s:vimodoro_state
+        let s:vimodoro_state = 0
 
         call s:PomodoroRefreshStatusLine(0)
 
@@ -244,7 +279,7 @@ function! g:PomodoroStop()
                     \(c) I change my mind, please continue the running Pomodoro.",
                     \"&a\n&b\n&c", 3, '')
 
-        let s:pomodoro_started = state_bak
+        let s:vimodoro_state = state_bak
 
         if choice == 1
             call pomodorohandlers#rtm_task_complete(s:pomodoro_secret)
@@ -261,17 +296,16 @@ function! PomodoroToggleDisplayTime(showTime)
     let s:pomodoro_display_time = !a:showTime
     if s:pomodoro_display_time == 1
         let g:airline_section_y = g:pomodoro_time_format
-        call pomodorocommands#logger("g:pomodoro_debug_file", "calling timer_start(s:time_timer_duration)")
-        call s:PomodoroStartsShowTimeTimer(0)
+        call pomodorocommands#logger("g:pomodoro_debug_file", "calling s:PomodoroResumeTimer(0)")
+        call s:PomodoroResumeTimer(0)
     else
         let g:airline_section_y =
                     \ '%{airline#util#wrap(airline#parts#ffenc(),0)}'
-        call pomodorocommands#logger("g:pomodoro_debug_file", "calling timer_stop(s:pomodoro_show_time_timer)")
-        call timer_stop(s:pomodoro_show_time_timer)
-        if s:pomodoro_started != 0
+        call pomodorocommands#logger("g:pomodoro_debug_file", "calling timer_pause(s:pomodoro_show_time_timer, 1)")
+        call timer_pause(s:pomodoro_show_time_timer, 1)
+        if s:vimodoro_state != s:vimodoro_states.inactive
             let s:pomodoro_display_time = 1
-            let tmpTimer = timer_start(s:pomodoro_redisplay_status_duration,
-                        \ 's:PomodoroStartsShowTimeTimer')
+            let tmpTimer = timer_start(s:pomodoro_redisplay_status_duration, 's:PomodoroResumeTimer')
         endif
     endif
     AirlineRefresh
@@ -280,46 +314,59 @@ endfunc
 " Toggle display time for s:pomodoro_redisplay_status_duration milliseconds when
 " Pomodoro is running or when status line is displaying file encoding.
 function! PomodoroDisplayTime()
-    if s:pomodoro_display_time != 1 || s:pomodoro_started > 0
-        call pomodorocommands#logger("g:pomodoro_debug_file", "Executing PomodoroDisplayTime()")
-        let g:airline_section_y = g:pomodoro_time_format
-        call timer_stop(s:pomodoro_show_time_timer)
-        let tmpTimer = timer_start(s:pomodoro_redisplay_status_duration,
-                    \ 's:PomodoroStartsShowTimeTimer')
-        AirlineRefresh
+    call pomodorocommands#logger("g:pomodoro_debug_file", "Executing PomodoroDisplayTime()")
+    let s:vimodoro_force_display_time = 1
+    if !IsVimodoroTicking()
+        call timer_pause(s:pomodoro_show_time_timer, 0)
+        let tmpTimer = timer_start(s:pomodoro_redisplay_status_duration, function('s:VimodoroStopTicking', [1]))
+    elseif s:vimodoro_state != s:vimodoro_states.inactive
+        let tmpTimer = timer_start(s:pomodoro_redisplay_status_duration, function('s:VimodoroStopTicking', [0]))
+    else
+        let s:vimodoro_force_display_time = 0
     endif
 endfunction
 
-function! s:PomodoroStartsShowTimeTimer(timer)
+function! s:VimodoroStopTicking(paused, timer)
+    let s:vimodoro_force_display_time = 0
+    call timer_pause(s:pomodoro_show_time_timer, a:paused)
     call s:PomodoroRefreshStatusLine(0)
+endfunction
+
+function! s:PomodoroResumeTimer(timer)
+    call timer_pause(s:pomodoro_show_time_timer, 0)
+endfunction
+
+function! s:PomodoroStartsShowTimeTimer(timer)
     let s:pomodoro_show_time_timer = timer_start(s:time_timer_duration,
                 \ 's:PomodoroRefreshStatusLine',
                 \ {'repeat': -1})
 endfunction
 
 function! s:PomodoroRefreshStatusLine(timer)
-    if s:pomodoro_display_time == 1
-        if s:pomodoro_started == 0
-            let g:airline_section_y = g:pomodoro_time_format
-        else
-            let g:airline_section_y = '%{PomodoroStatus(0)}'
-        endif
-        AirlineRefresh
+    if !IsVimodoroTicking()
+        let g:airline_section_y = '%{airline#util#wrap(airline#parts#ffenc(),0)}'
+    elseif s:vimodoro_state == s:vimodoro_states.inactive || s:vimodoro_force_display_time
+        let g:airline_section_y = g:pomodoro_time_format
+    else
+        let g:airline_section_y = '%{PomodoroStatus(0)}'
     endif
+    AirlineRefresh
     call pomodorocommands#logger("g:pomodoro_debug_file",
                 \ "s:PomodoroRefreshStatusLine(timer) called - g:airline_section_y = " .
                 \ g:airline_section_y)
 endfunc
 
+function! IsVimodoroTicking()
+    return !timer_info(s:pomodoro_show_time_timer)[0].paused
+endfunction
+
 function! PomodoroUninterrupted(the_secret)
     if a:the_secret == s:pomodoro_secret
-        call timer_stop(s:pomodoro_run_timer)
-        let g:airline_section_y = g:pomodoro_time_format
-        if s:pomodoro_started == 1 " Started (Focus mode)
+        if s:vimodoro_state == 1 " Started (Focus mode)
             call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . s:pomodoro_name . " #" . pomodorohandlers#get_pomodoro_count() .
                         \ " task marked as done. Duration: " .
                         \ pomodorocommands#calculate_duration(s:pomodoro_started_at, localtime()) . ".")
-        else " The s:pomodoro_started == 2 (break mode)
+        else " The s:vimodoro_state == 2 (break mode)
             " TODO: Need to re-evaluate if the calculation formula is correct or not.
             call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . s:pomodoro_name . " #" . pomodorohandlers#get_pomodoro_count() .
                         \ " task marked as done after break. Duration: " .
@@ -327,26 +374,24 @@ function! PomodoroUninterrupted(the_secret)
         endif
         let s:pomodoro_interrupted = 0
         let s:pomodoro_name = ''
-        let s:pomodoro_started = 0
+        let s:vimodoro_state = s:vimodoro_states.inactive
         call s:PomodoroRefreshStatusLine(0)
     endif
 endfunction
 
 function! PomodoroInterrupted(the_secret)
     if a:the_secret == s:pomodoro_secret
-        call timer_stop(s:pomodoro_run_timer)
-        let g:airline_section_y = g:pomodoro_time_format
-        if s:pomodoro_started == 1 " Started (Focus mode)
+        if s:vimodoro_state == 1 " Started (Focus mode)
             call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . s:pomodoro_name . " #" . pomodorohandlers#get_pomodoro_count() .
                         \ " focus stopped (Interrupted). Duration: " .
                         \ pomodorocommands#calculate_duration(s:pomodoro_started_at, localtime()) . ".")
-        else " The s:pomodoro_started == 2 (break mode)
+        else " The s:vimodoro_state == 2 (break mode)
             call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . s:pomodoro_name . " #" . pomodorohandlers#get_pomodoro_count() .
                         \ " break stopped (Interrupted). Duration: " .
                         \ pomodorocommands#calculate_duration(s:pomodoro_break_at, localtime()) . ".")
         endif
         let s:pomodoro_interrupted = 1
-        let s:pomodoro_started = 0
+        let s:vimodoro_state = s:vimodoro_states.inactive
         call s:PomodoroRefreshStatusLine(0)
     endif
 endfunction
@@ -367,7 +412,8 @@ endfunction
 
 function! SetPomodoroState(the_secret, state)
     if a:the_secret == s:pomodoro_secret
-        let s:pomodoro_started = a:state
+        let s:vimodoro_state_changed_time = localtime()
+        let s:vimodoro_state = a:state
         call pomodorocommands#logger("g:pomodoro_debug_file", "Pomodoro State has been set.")
         call s:PomodoroRefreshStatusLine(0)
     else
@@ -376,7 +422,7 @@ function! SetPomodoroState(the_secret, state)
 endfunction
 
 function! GetPomodoroState()
-    return s:pomodoro_started
+    return s:vimodoro_state
 endfunction
 
 function! GetPomodoroStartedAt(state)
