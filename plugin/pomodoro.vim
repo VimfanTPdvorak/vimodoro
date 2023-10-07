@@ -350,9 +350,9 @@ function! s:PomodoroRefreshStatusLine(timer)
         let g:airline_section_y = '%{PomodoroStatus(0)}'
     endif
     AirlineRefresh
-    call pomodorocommands#logger("g:pomodoro_debug_file",
-                \ "s:PomodoroRefreshStatusLine(timer) called - g:airline_section_y = " .
-                \ g:airline_section_y)
+    " call pomodorocommands#logger("g:pomodoro_debug_file",
+    "             \ "s:PomodoroRefreshStatusLine(timer) called - g:airline_section_y = " .
+    "             \ g:airline_section_y)
 endfunc
 
 function! IsVimodoroTicking()

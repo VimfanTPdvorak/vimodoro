@@ -120,9 +120,8 @@ function! pomodorohandlers#rtm_task_complete(the_secret)
 endfunction
 
 function! pomodorohandlers#rtm_reset_if_non_rtm_task(the_secret, name)
-    if a:the_secret == s:pomodoro_secret && s:key != '' && a:name !=# s:taskname
-        let s:taskname = ''
-        let s:key = ''
+    if a:the_secret == s:pomodoro_secret
+        call s:vimodoro.resetRTMTaskKey(a:name)
     endif
 endfunction
 
@@ -139,15 +138,6 @@ let s:rtmREST = "https://api.rememberthemilk.com/services/rest/"
 let s:plugin_root = expand("<sfile>:h:h")
 let s:getTaskList_py = s:plugin_root . "/py/getTaskList.py"
 let s:setTaskComplete_py = s:plugin_root . "/py/setTaskComplete.py"
-let s:key = ''
-let s:taskname = ''
-
-" Store RTM list ID, task series ID, and task ID
-" taskIDs = {
-"            '001': {'lsID': '123', 'tsID': '555', 'ID': '544'},
-"            '002': {'lsID': '123', 'tsID': '455', 'ID': '444'}
-"            }
-let s:taskIDs = {}
 
 " Help text
 let s:helpmore = ['"   ===== Hotkeys =====']
@@ -159,11 +149,33 @@ else
 endif
 
 " Keymap
-let s:keymap = []
+let s:vdrIdmap = []
 " action, key, help.
-let s:keymap += [['Help', '?', 'Toggle quick help']]
-let s:keymap += [['Close', 'q', 'Close Vimodoro panel']]
-let s:keymap += [['Start', 's', 'Start Working on current task']]
+let s:vdrIdmap += [['Help', '?', 'Toggle quick help']]
+let s:vdrIdmap += [['Close', 'q', 'Close Vimodoro panel']]
+let s:vdrIdmap += [['Reload', 'r', 'Reload tasks list']]
+let s:vdrIdmap += [['Start', 's', 'Start Working on current task']]
+
+let s:vdrId = ''
+let s:taskname = ''
+
+let s:tasklist = {}
+" Store RTM list ID, task series ID, and task ID
+" tasklist = { '0': {'type': 'list', 'label': 'Personal'},
+"             '1': {'type': 'taskseries',
+"                   'tasks': {
+"                               '001': {'lsID': '123', 'tsID': '555', 'ID': '544', 'label': 'To do #1'},
+"                               '002': {'lsID': '123', 'tsID': '455', 'ID': '444', 'label': 'To do #2'}
+"                            }
+"                  },
+"             '2': {'type': 'blankline', 'label': ''},
+"             '3': {'type': 'list', 'label': 'Work'},
+"             '4': {'type': 'taskseries',
+"                   'tasks': {
+"                             '003': {...}
+"                            }
+"                  }
+"            }
 
 let s:panel = {}
 
@@ -187,7 +199,6 @@ function! s:panel.SetFocus() abort
         echoerr "Fatal: window does not exist!"
         return
     endif
-    " call s:log("SetFocus() winnr:".winnr." bufname:".self.bufname)
     " wincmd would cause cursor outside window.
     call s:exec_silent("norm! ".winnr."\<c-w>\<c-w>")
 endfunction
@@ -201,7 +212,6 @@ function! s:panel.IsVisible() abort
 endfunction
 
 function! s:panel.Hide() abort
-    " call s:log(self.bufname." Hide()")
     if !self.IsVisible()
         return
     endif
@@ -211,31 +221,21 @@ endfunction
 
 let s:vimodoro = s:new(s:panel)
 
+call pomodorocommands#logger("g:pomodoro_debug_file", "s:vimodoro.bufname = " . s:vimodoro.bufname)
+
 function! s:vimodoro.Init() abort
     let self.bufname = "vimodoro_".s:getUniqueID()
+
     " Increase to make it unique.
     let self.height = g:vimodoro_SplitHeight
     let self.targetid = -1
     let self.targetBufnr = -1
-    let self.tree = {}     "data converted to internal format.
-    let self.seq_last = -1
-    let self.save_last = -1
-    let self.save_last_bak = -1
 
-    " seqs
-    let self.seq_cur = -1
-    let self.seq_curhead = -1
-    let self.seq_newhead = -1
-    let self.seq_saved = {} "{saved value -> seq} pair
-
-    "backup, for mark
-    let self.seq_cur_bak = -1
-    let self.seq_curhead_bak = -1
-    let self.seq_newhead_bak = -1
-
-    let self.tasklist = []     "output data.
+    let self.tasklistloaded = 0
     let self.showHelp = 0
 endfunction
+
+call pomodorocommands#logger("g:pomodoro_debug_file", "s:vimodoro.bufname = " . s:vimodoro.bufname)
 
 function! s:vimodoro.BindKey() abort
     if v:version > 703 || (v:version == 703 && has("patch1261"))
@@ -244,7 +244,7 @@ function! s:vimodoro.BindKey() abort
         let map_options = ''
     endif
     let map_options = map_options.' <silent> <buffer> '
-    for i in s:keymap
+    for i in s:vdrIdmap
         silent exec 'nmap '.map_options.i[1].' <plug>Vimodoro'.i[0]
         silent exec 'nnoremap '.map_options.'<plug>Vimodoro'.i[0]
             \ .' :call <sid>vimodoroAction("'.i[0].'")<cr>'
@@ -265,7 +265,6 @@ function! s:vimodoro.BindAu() abort
 endfunction
 
 function! s:vimodoro.Action(action) abort
-    " call s:log("vimodoro.Action() ".a:action)
     if !self.IsVisible() || !exists('b:isVimodoroBuffer')
         echoerr "Fatal: window does not exist."
         return
@@ -274,7 +273,7 @@ function! s:vimodoro.Action(action) abort
         echoerr "Fatal: Action does not exist!"
         return
     endif
-    if a:action == "Start"
+    if a:action == "Start" || a:action == "Reload"
         exec 'call self.Action'.a:action.'()'
     else
         silent exec 'call self.Action'.a:action.'()'
@@ -313,24 +312,43 @@ function! s:vimodoro.ActionClose() abort
 endfunction
 
 function! s:vimodoro.ActionStart() abort
-    call pomodorocommands#logger("g:pomodoro_debug_file", string(s:taskIDs))
-    let s:key = matchstr(getline('.'), '^\d\{3}')
-    if has_key(s:taskIDs, s:key)
+    call pomodorocommands#logger("g:pomodoro_debug_file", string(s:tasklist))
+    let s:vdrId = matchstr(getline('.'), '^\d\{3}')
+    let tasklistKey = s:getTasklistKey(s:vdrId)
+    if tasklistKey
         let s:taskname = '[🐮 ' . substitute(matchstr(getline('.'), '\.\s.*$'), '^\.\s', '', '') . ']'
         let choice = confirm(s:taskname . "\nWant to start working on the selected task?", "&Yes\n&No")
         if choice == 1
             call self.Toggle()
             exec "PomodoroStart " . s:taskname
+            call pomodorocommands#logger("g:pomodoro_debug_file", "self.bufname = " . self.bufname)
             call pomodorocommands#logger("g:pomodoro_debug_file",
-                        \ "PomodoroStart [" . s:taskIDs[s:key]['lsID'] . ":" .
-                        \ s:taskIDs[s:key]['tsID'] . ":" .
-                        \ s:taskIDs[s:key]['ID'] . "]")
+                        \ "PomodoroStart [" . s:tasklist[tasklistKey]['tasks'][s:vdrId]['lsID'] . ":" .
+                        \ s:tasklist[tasklistKey]['tasks'][s:vdrId]['tsID'] . ":" .
+                        \ s:tasklist[tasklistKey]['tasks'][s:vdrId]['ID'] . "]")
         endif
     else
         echohl WarningMsg
         echo "Move the cursor to a task you wish to begin, then press the start key."
         echohl None
     endif
+endfunction
+
+function! s:getTasklistKey(vdrId)
+    for key in keys(s:tasklist)
+        if s:tasklist[key]['type'] == 'taskseries'
+            let tasks = s:tasklist[key]['tasks']
+            if has_key(tasks, a:vdrId)
+                return key
+            endif
+        endif
+    endfor
+    return ''
+endfunction
+
+function! s:vimodoro.ActionReload() abort
+    echom "Calling self.Update(1)..."
+    call self.Update(1)
 endfunction
 
 " May fail due to target window closed.
@@ -350,7 +368,6 @@ function! s:vimodoro.Toggle() abort
     "Global auto commands to keep vimodoro up to date.
     let auEvents = "BufEnter,InsertLeave,CursorMoved,BufWritePost"
 
-    " call s:log(self.bufname." Toggle()")
     if self.IsVisible()
         call self.Hide()
         call self.SetTargetFocus()
@@ -370,7 +387,6 @@ function! s:vimodoro.Toggle() abort
 endfunction
 
 function! s:vimodoro.Show() abort
-    " call s:log("vimodoro.Show()")
     if self.IsVisible()
         return
     endif
@@ -427,26 +443,23 @@ function! s:vimodoro.Show() abort
     let &eventignore = ei_bak
 endfunction
 
-function! s:vimodoro.Update() abort
+function! s:vimodoro.Update(requestReload = 0) abort
     if !self.IsVisible()
         return
     endif
-    " do nothing if we're in the vimodoro panel
-    if exists('b:isVimodoroBuffer')
+    " Do nothing if we're in the vimodoro panel and not requesting reload
+    if exists('b:isVimodoroBuffer') && !a:requestReload
         return
     endif
     if (&bt != '' && &bt != 'acwrite') || (&modifiable == 0) || (mode() != 'n')
         if &bt == 'quickfix' || &bt == 'nofile'
             "Do nothing for quickfix and q:
-            " call s:log("vimodoro.Update() ignore quickfix")
             return
         endif
-        if self.targetBufnr == bufnr('%') && self.targetid == w:vimodoro_id
-            " call s:log("vimodoro.Update() invalid buffer NOupdate")
+        if self.targetBufnr == bufnr('%') && self.targetid == w:vimodoro_id && !a:requestReload
             return
         endif
         let emptybuf = 1 "This is not a valid buffer, could be help or something.
-        " call s:log("vimodoro.Update() invalid buffer update")
     else
         let emptybuf = 0
         "update vimodoro,set focus
@@ -454,7 +467,6 @@ function! s:vimodoro.Update() abort
             let self.targetid = w:vimodoro_id
         endif
     endif
-    " call s:log("vimodoro.Update() update whole tree")
 
     let self.targetBufnr = bufnr('%')
     let self.targetid = w:vimodoro_id
@@ -462,19 +474,32 @@ function! s:vimodoro.Update() abort
     let self.seq_curhead = -1
     let self.seq_newhead = -1
     "call self.ConvertInput(1) "update all.
-    call self.Render()
+    call self.Render(a:requestReload)
     call self.SetFocus()
     call self.Draw()
 endfunction
 
 " TODO: Print the tasks list and keep track of the list ID, task series ID, and
 " task ID per task.
-function! s:vimodoro.Render() abort
-    let rtmFilter = "dueBefore:tomorrow AND status:incomplete"
+function! s:vimodoro.Render(requestReload = 0) abort
+    if a:requestReload || !self.tasklistloaded
+        if a:requestReload
+            setlocal modifiable
+            setlocal textwidth=0
+            " Delete text into blackhole register.
+            call s:exec('1,$ d _')
+            call s:exec('normal! iReloading...')
+            setlocal nomodifiable
+        endif
 
-    " Insert task list into self.tasklist
-    execute "py3 sys.argv = " . "['" . rtmFilter . "']"
-    execute "py3file " . s:getTaskList_py
+        let rtmFilter = "dueBefore:tomorrow AND status:incomplete"
+
+        " Insert task list into s:tasklist
+        execute "py3 sys.argv = " . "['" . rtmFilter . "']"
+        execute "py3file " . s:getTaskList_py
+
+        call pomodorocommands#logger("g:pomodoro_debug_file", string(s:tasklist))
+    endif
 endfunction
 
 function! s:vimodoro.Draw() abort
@@ -485,12 +510,33 @@ function! s:vimodoro.Draw() abort
     setlocal textwidth=0
     " Delete text into blackhole register.
     call s:exec('1,$ d _')
-    call append(0, self.tasklist)
+
+    let firstln = 1
+
+    for key in keys(s:tasklist)
+        call pomodorocommands#logger("g:pomodoro_debug_file", "s:tasklist('" . key . "']['type'] = " . s:tasklist[key]['type'])
+        if s:tasklist[key]['type'] == 'list'
+            if firstln
+                call append(0, s:tasklist[key]['label'])
+                "remove the last empty line
+                call s:exec('$d _')
+                let firstln = 0
+            else
+                call append(line('$'), s:tasklist[key]['label'])
+            endif
+        elseif s:tasklist[key]['type'] == 'taskseries'
+            for vdrKey in keys(s:tasklist[key]['tasks'])
+                call append(line('$'), vdrKey . ". " . s:tasklist[key]['tasks'][vdrKey]['label'])
+            endfor
+        elseif s:tasklist[key]['type'] == 'blankline'
+            call append(line('$'), '')
+        endif
+    endfor
 
     call self.AppendHelp()
 
     "remove the last empty line
-    call s:exec('$d _')
+    "call s:exec('$d _')
 
     " restore previous cursor position.
     call winrestview(savedview)
@@ -501,7 +547,7 @@ endfunction
 function! s:vimodoro.AppendHelp() abort
     if self.showHelp
         call append(0,'') "empty line
-        for i in s:keymap
+        for i in s:vdrIdmap
             call append(0,'" '.i[1].' : '.i[2])
         endfor
         call append(0,s:helpmore)
@@ -514,24 +560,28 @@ function! s:vimodoro.AppendHelp() abort
 endfunction
 
 function! s:vimodoro.rtm_task_complete() abort
-    call pomodorocommands#logger("g:pomodoro_debug_file", "has_key(s:taskIDs, s:key) = " . has_key(s:taskIDs, s:key))
+    call pomodorocommands#logger("g:pomodoro_debug_file", "self.bufname = " . self.bufname)
+    call pomodorocommands#logger("g:pomodoro_debug_file", "s:vdrId = " . s:vdrId)
+    call pomodorocommands#logger("g:pomodoro_debug_file", "s:tasklist = " . string(s:tasklist))
     call pomodorocommands#logger("g:pomodoro_debug_file", "s:taskname = " . s:taskname)
     call pomodorocommands#logger("g:pomodoro_debug_file", "GetPomodoroName() = " . GetPomodoroName())
-    call pomodorocommands#logger("g:pomodoro_debug_file", "s:taskname = GetPomodoroName() : " . (GetPomodoroName() == s:taskname))
 
-    if has_key(s:taskIDs, s:key) && GetPomodoroName() == s:taskname
+    let tasklistKey = s:getTasklistKey(s:vdrId)
+
+    if tasklistKey && GetPomodoroName() == s:taskname
         call pomodorocommands#logger("g:pomodoro_debug_file",
                     \ "py3 sys.argv = " .
-                    \ "[\"" . s:taskIDs[s:key]['lsID'] . "\",
-                    \ \"" . s:taskIDs[s:key]['tsID'] . "\",
-                    \ \"" . s:taskIDs[s:key]['ID'] . "\"]")
+                    \ "[\"" . s:tasklist[tasklistKey]['tasks'][s:vdrId]['lsID'] . "\",
+                    \ \"" . s:tasklist[tasklistKey]['tasks'][s:vdrId]['tsID'] . "\",
+                    \ \"" . s:tasklist[tasklistKey]['tasks'][s:vdrId]['ID'] . "\"]")
         execute "py3 sys.argv = " .
-                    \ "[\"" . s:taskIDs[s:key]['lsID'] . "\",
-                    \ \"" . s:taskIDs[s:key]['tsID'] . "\",
-                    \ \"" . s:taskIDs[s:key]['ID'] . "\"]"
+                    \ "[\"" . s:tasklist[tasklistKey]['tasks'][s:vdrId]['lsID'] . "\",
+                    \ \"" . s:tasklist[tasklistKey]['tasks'][s:vdrId]['tsID'] . "\",
+                    \ \"" . s:tasklist[tasklistKey]['tasks'][s:vdrId]['ID'] . "\"]"
         execute "py3file " . s:setTaskComplete_py
         " TODO: Should check if the mark as done was a success to decide wether
-        " or not to reset the s:key variable. Not really sure yet.
+        " or not to reset the s:vdrId variable, etc.
+        call remove(s:tasklist[tasklistKey]['tasks'], s:vdrId)
     endif
 
     " This echo has been done in the above python script, but I don't know why
@@ -542,20 +592,27 @@ function! s:vimodoro.rtm_task_complete() abort
 
     " Re-initiate these two variables to an empty string so that when starting a
     " new task, the task name will be empty and calling this method won't
-    " calling the rtm.tasks.complete method since the s:key has been set to
+    " calling the rtm.tasks.complete method since the s:vdrId has been set to
     " blank -- the task was not interrupted, nor still WIP.
     let s:taskname = ''
-    let s:key = ''
+    let s:vdrId = ''
+endfunction
+
+" This is as a way to prevent an intercepted RTM task by a non-rtm task will not
+" be masked as completed when the non-RTM task marked as done.
+function! s:vimodoro.resetRTMTaskKey(name)
+    if s:vdrId != '' && a:name !=# s:taskname
+        let s:taskname = ''
+        let s:vdrId = ''
+    endif
 endfunction
 
 function! s:exec(cmd) abort
-    " call s:log("s:exec() ".a:cmd)
     silent exe a:cmd
 endfunction
 
 " Don't trigger any events(like BufEnter which could cause redundant refresh)
 function! s:exec_silent(cmd) abort
-    " call s:log("s:exec_silent() ".a:cmd)
     let ei_bak= &eventignore
     set eventignore=BufEnter,BufLeave,BufWinLeave,InsertLeave,CursorMoved,BufWritePost
     silent exe a:cmd
@@ -570,7 +627,6 @@ function! s:getUniqueID() abort
 endfunction
 
 function! s:vimodoroAction(action) abort
-    " call s:log("vimodoroAction()")
     if !exists('t:vimodoro')
         echoerr "Fatal: t:vimodoro does not exist!"
         return
@@ -596,7 +652,6 @@ function! pomodorohandlers#VimodoroUpdate() abort
     endif
     if !exists('w:vimodoro_id')
         let w:vimodoro_id = 'id_'.s:getUniqueID()
-        " call s:log("Unique window id assigned: ".w:vimodoro_id)
     endif
     " assume window layout won't change during updating.
     let thiswinnr = winnr()
@@ -609,16 +664,14 @@ endfunction
 
 function! pomodorohandlers#VimodoroToggle() abort
     try
-        " call s:log(">>> VimodoroToggle()")
         if !exists('w:vimodoro_id')
             let w:vimodoro_id = 'id_'.s:getUniqueID()
-            " call s:log("Unique window id assigned: ".w:vimodoro_id)
         endif
         if !exists('t:vimodoro')
             let t:vimodoro = s:new(s:vimodoro)
         endif
+        call pomodorocommands#logger("g:pomodoro_debug_file", "[pomodorohandlers#VimodoroToggle()] w:vimodoro_id = " . w:vimodoro_id . ", t:vimodoro = " . string(t:vimodoro))
         call t:vimodoro.Toggle()
-        " call s:log("<<< VimodoroToggle() leave")
     catch /^Vim\%((\a\+)\)\?:E11/
         echohl ErrorMsg
         echom v:exception

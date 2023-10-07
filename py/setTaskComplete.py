@@ -20,9 +20,9 @@ sharedSecret = os.getenv("VIMODORO_RTM_SECRET")
 #    taskseriesID = sys.argv[2]
 #    taskID = sys.argv[3]
 
-listID = vim.eval("s:taskIDs[s:key]['lsID']")
-taskseriesID = vim.eval("s:taskIDs[s:key]['tsID']")
-taskID = vim.eval("s:taskIDs[s:key]['ID']")
+listID = vim.eval("s:tasklist[tasklistKey]['tasks'][s:vdrId]['lsID']")
+taskseriesID = vim.eval("s:tasklist[tasklistKey]['tasks'][s:vdrId]['tsID']")
+taskID = vim.eval("s:tasklist[tasklistKey]['tasks'][s:vdrId]['ID']")
 
 def RTM_Sign(params):
     return hashlib.md5((sharedSecret+params).encode()).hexdigest()
