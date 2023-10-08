@@ -76,7 +76,6 @@ Configuration
 Add the following options to your `~/.vimrc` to configure Vimodoro, if desired.
 No need to do so if you are satisfied with the default settings.
 
-    ```vim
     " Vimodoro's status refresh rate in seconds. (default: 15)
     let g:pomodoro_status_refresh_duration = 1
 
@@ -121,33 +120,26 @@ No need to do so if you are satisfied with the default settings.
     " Display time for n seconds then followed by Pomodoro status being displayed again,
     " or display file format for n milliseconds then back to display Pomodoro status. (default: 2)
     let g:pomodoro_redisplay_status_duration = 2
-    ```
 
 
 ### Bells and Whistles
 Notifications outside vim can be enabled through the option `g:pomodoro_notification_cmd`.
 For instance, to play a soundfile after each completed pomodoro or break, add something like
 
-    ```vim
     let g:pomodoro_notification_cmd = "mpg123 -q ~/.vim/pomodoro-notification.mp3"
-    ```
 
 to your `~/.vimrc`. System-wide notifications can, for instance, be done via zenity and
 the option
 
-    ```vim
     let g:pomodoro_notification_cmd = 'zenity --notification --text="Pomodoro finished"''
-    ```
 
 You can also use `g:pomodoro_work_end_notification_cmd` and `g:pomodoro_break_end_notification_cmd`
 that will be executed exclusively when work is done and when a break is done.  For instance,
 users on macOS can define the two variables like this:
 
-    ```vim
     let g:pomodoro_work_end_notification_cmd = "say \"Let's take a break.\";
                 \afplay $ICLOUDHOME/vim-pomodoro-audio/break.mp3&"
     let g:pomodoro_break_end_notification_cmd = "say \"Let's get back to work.\""
-    ```
 
 Note that in the above configuration example, the `$ICLOUDHOME` is simply a
 custom environment variable that holds the full path to the iCloud drive.
