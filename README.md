@@ -26,7 +26,9 @@ management efficiency.
 
 * `<leader>pt` -- Toggle between the default displayed information in the
   vim-airline's `g:airline_section_y` statusline and the Vimodoro's status
-  information.
+  information. If the Pomodoro has been running, then executing the toggle will
+  display the file encoding within approximately two seconds, followed by the
+  Pomodoro status being displayed again.
 * `<leader>ps` -- Starts a new Pomodoro, a shortcut to `:PomodoroStart
   [pomodoro_name]`.
     After a Pomodoro has ended, a confirmation will remind you to take a break.
@@ -41,10 +43,6 @@ management efficiency.
 Also, in addition to the default notifications inside vim, Vimodoro allows
 you to add further external notifications, such as sounds, system-notification
 popups etc.
-
-If the Pomodoro has been running, then executing the toggle will display the
-file encoding within approximately two seconds, followed by the Pomodoro status
-being displayed again.
 
 Screenshots
 -----------
