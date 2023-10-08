@@ -57,7 +57,7 @@ def RTM_MarkTaskComplete(listID, taskseriesID, taskID):
     tasks = json.loads(response) # Parse response as JSON
     if "stat" in response:
         if tasks["rsp"]["stat"] == "ok":
-            vim.command("echo 'The task " + vim.eval("s:taskname").replace("'", "''")+ " has been marked as done.'")
+            vim.command("echo 'The task " + vim.eval("s:rtm_taskname").replace("'", "''")+ " has been marked as done.'")
             vim.command("redraw")
         else:
             # TODO: Handle it gracefully

@@ -105,7 +105,7 @@ function! pomodorohandlers#restart(name, duration, timer)
         else
             let s:pomodoro_count = 1
         endif
-        exec "PomodoroStart " . a:name
+        call VimodoroStart(s:pomodoro_secret, a:name, s:task_type)
     elseif answer == "INTERRUPTED"
         call PomodoroInterrupted(s:pomodoro_secret)
     elseif answer == "DONE"
@@ -119,9 +119,9 @@ function! pomodorohandlers#rtm_task_complete(the_secret)
     endif
 endfunction
 
-function! pomodorohandlers#rtm_reset_if_non_rtm_task(the_secret, name)
+function! pomodorohandlers#rtm_reset_if_non_rtm_task(the_secret)
     if a:the_secret == s:pomodoro_secret
-        call s:vimodoro.resetRTMTaskKey(a:name)
+        call s:vimodoro.resetRTMTaskKey()
     endif
 endfunction
 
@@ -149,15 +149,18 @@ else
 endif
 
 " Keymap
-let s:vdrIdmap = []
+let s:keymap = []
 " action, key, help.
-let s:vdrIdmap += [['Help', '?', 'Toggle quick help']]
-let s:vdrIdmap += [['Close', 'q', 'Close Vimodoro panel']]
-let s:vdrIdmap += [['Reload', 'r', 'Reload tasks list']]
-let s:vdrIdmap += [['Start', 's', 'Start Working on current task']]
+let s:keymap += [['Help', '?', 'Toggle quick help']]
+let s:keymap += [['Close', 'q', 'Close Vimodoro panel']]
+let s:keymap += [['Reload', 'r', 'Reload tasks list']]
+let s:keymap += [['Start', 's', 'Start Working on current task']]
+
+const s:task_types = { 'manual': 0, 'rtm': 1 }
+let s:task_type = s:task_types.manual
 
 let s:vdrId = ''
-let s:taskname = ''
+let s:rtm_taskname = ''
 
 let s:tasklist = {}
 " Store RTM list ID, task series ID, and task ID
@@ -244,7 +247,7 @@ function! s:vimodoro.BindKey() abort
         let map_options = ''
     endif
     let map_options = map_options.' <silent> <buffer> '
-    for i in s:vdrIdmap
+    for i in s:keymap
         silent exec 'nmap '.map_options.i[1].' <plug>Vimodoro'.i[0]
         silent exec 'nnoremap '.map_options.'<plug>Vimodoro'.i[0]
             \ .' :call <sid>vimodoroAction("'.i[0].'")<cr>'
@@ -316,14 +319,14 @@ function! s:vimodoro.ActionStart() abort
     let s:vdrId = matchstr(getline('.'), '^\d\{3}')
     let tasklistKey = s:getTasklistKey(s:vdrId)
     if tasklistKey
-        let s:taskname = '[🐮 ' . substitute(matchstr(getline('.'), '\.\s.*$'), '^\.\s', '', '') . ']'
-        let choice = confirm(s:taskname . "\nWant to start working on the selected task?", "&Yes\n&No")
+        let s:rtm_taskname = '[🐮 ' . substitute(matchstr(getline('.'), '\.\s.*$'), '^\.\s', '', '') . ']'
+        let choice = confirm(s:rtm_taskname . "\nWant to start working on the selected task?", "&Yes\n&No")
         if choice == 1
             call self.Toggle()
-            exec "PomodoroStart " . s:taskname
+            call VimodoroStart(s:pomodoro_secret, s:rtm_taskname, 1)
             call pomodorocommands#logger("g:pomodoro_debug_file", "self.bufname = " . self.bufname)
             call pomodorocommands#logger("g:pomodoro_debug_file",
-                        \ "PomodoroStart [" . s:tasklist[tasklistKey]['tasks'][s:vdrId]['lsID'] . ":" .
+                        \ "VimodoroStart [" . s:tasklist[tasklistKey]['tasks'][s:vdrId]['lsID'] . ":" .
                         \ s:tasklist[tasklistKey]['tasks'][s:vdrId]['tsID'] . ":" .
                         \ s:tasklist[tasklistKey]['tasks'][s:vdrId]['ID'] . "]")
         endif
@@ -547,7 +550,7 @@ endfunction
 function! s:vimodoro.AppendHelp() abort
     if self.showHelp
         call append(0,'') "empty line
-        for i in s:vdrIdmap
+        for i in s:keymap
             call append(0,'" '.i[1].' : '.i[2])
         endfor
         call append(0,s:helpmore)
@@ -563,12 +566,12 @@ function! s:vimodoro.rtm_task_complete() abort
     call pomodorocommands#logger("g:pomodoro_debug_file", "self.bufname = " . self.bufname)
     call pomodorocommands#logger("g:pomodoro_debug_file", "s:vdrId = " . s:vdrId)
     call pomodorocommands#logger("g:pomodoro_debug_file", "s:tasklist = " . string(s:tasklist))
-    call pomodorocommands#logger("g:pomodoro_debug_file", "s:taskname = " . s:taskname)
+    call pomodorocommands#logger("g:pomodoro_debug_file", "s:rtm_taskname = " . s:rtm_taskname)
     call pomodorocommands#logger("g:pomodoro_debug_file", "GetPomodoroName() = " . GetPomodoroName())
 
     let tasklistKey = s:getTasklistKey(s:vdrId)
 
-    if tasklistKey && GetPomodoroName() == s:taskname
+    if tasklistKey && GetPomodoroName() == s:rtm_taskname
         call pomodorocommands#logger("g:pomodoro_debug_file",
                     \ "py3 sys.argv = " .
                     \ "[\"" . s:tasklist[tasklistKey]['tasks'][s:vdrId]['lsID'] . "\",
@@ -594,17 +597,17 @@ function! s:vimodoro.rtm_task_complete() abort
     " new task, the task name will be empty and calling this method won't
     " calling the rtm.tasks.complete method since the s:vdrId has been set to
     " blank -- the task was not interrupted, nor still WIP.
-    let s:taskname = ''
+    let s:rtm_taskname = ''
     let s:vdrId = ''
 endfunction
 
 " This is as a way to prevent an intercepted RTM task by a non-rtm task will not
 " be masked as completed when the non-RTM task marked as done.
-function! s:vimodoro.resetRTMTaskKey(name)
-    if s:vdrId != '' && a:name !=# s:taskname
-        let s:taskname = ''
-        let s:vdrId = ''
-    endif
+function! s:vimodoro.resetRTMTaskKey()
+    call pomodorocommands#logger("g:pomodoro_debug_file", "s:vimodoro.resetRTMTaskKey()")
+    let s:task_type = s:task_types.manual
+    let s:rtm_taskname = ''
+    let s:vdrId = ''
 endfunction
 
 function! s:exec(cmd) abort

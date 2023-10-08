@@ -216,10 +216,17 @@ function! PomodoroStatus(full)
     return the_status
 endfunction
 
-function! s:PomodoroStart(name)
-    call pomodorocommands#logger("g:pomodoro_debug_file", "Calling PomodoroStart")
+function! VimodoroStart(the_secret, name, is_rtm)
+    if a:the_secret == s:pomodoro_secret
+        call pomodorocommands#logger("g:pomodoro_debug_file", "VimodoroStart - a:is_rtm = " . a:is_rtm)
+        call s:PomodoroStart(a:name, a:is_rtm)
+    endif
+endfunction
+
+function! s:PomodoroStart(name, is_rtm = 0)
+    call pomodorocommands#logger("g:pomodoro_debug_file", "Calling PomodoroStart - a:is_rtm = " . a:is_rtm)
     if s:vimodoro_state == s:vimodoro_states.inactive || s:vimodoro_state == s:vimodoro_states.focus_ended || s:vimodoro_state == s:vimodoro_states.break_ended
-        call s:PomodoroGo(a:name)
+        call s:PomodoroGo(a:name, a:is_rtm)
     else
         let choice = confirm("Do you really wanted to stop the current running Pomodoro and start a new one?", "&Yes\n&No")
         if choice == 1
@@ -228,19 +235,21 @@ function! s:PomodoroStart(name)
                         \ " focus stopped. Duration: " .
                         \ pomodorocommands#calculate_duration(s:pomodoro_started_at, localtime()) . ".")
 
-            call s:PomodoroGo(a:name)
+            call s:PomodoroGo(a:name, a:is_rtm)
         endif
     endif
 endfunction
 
-function! s:PomodoroGo(name)
+function! s:PomodoroGo(name, is_rtm)
     if a:name == ''
         let s:pomodoro_name = '[Miscellaneous Task]'
     else
         let s:pomodoro_name = a:name
     endif
 
-    call pomodorohandlers#rtm_reset_if_non_rtm_task(s:pomodoro_secret, a:name)
+    if !a:is_rtm
+        call pomodorohandlers#rtm_reset_if_non_rtm_task(s:pomodoro_secret)
+    endif
 
     let s:pomodoro_run_timer = timer_start(g:pomodoro_work_duration * 60 * 1000, function('pomodorohandlers#pause', [s:pomodoro_name]))
     let s:pomodoro_started_at = localtime()
