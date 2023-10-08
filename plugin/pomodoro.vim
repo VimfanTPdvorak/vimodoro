@@ -210,7 +210,7 @@ function! PomodoroStatus(full)
     endif
 
     if a:full
-        let the_status = s:pomodoro_name . " " .the_status
+        let the_status = substitute(s:pomodoro_name, '\(.\{28}\).\{-}\(.\{28}\)$', '\1...\2', '') . " " .the_status
     endif
 
     return the_status
