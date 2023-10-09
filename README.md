@@ -149,23 +149,29 @@ time has ended, provided the specific notification variable is not set.
 
 Installation
 ------------
+I have submitted a pull request to the maintainer of vim-airline, requesting the
+addition of an extension I created for customizing the statusline of the
+Vimodoro RTM split window. I am uncertain of the timeline for review and merging
+of this request. Therefore, if you wish to utilize the customized statusline,
+you will need to use this [forked vim-airline](https://github.com/VimfanTPdvorak/vim-airline.git) repository at the vimodoro branch.
+
 * vim: Use your favorite plugin manager such as pathogen.
 * nvim: Using the lazy plugin manager.
     ```lua
     require("lazy").setup({
-        -- your other plugin
+        -- your other plugins
         {"VimfanTPdvorak/vimodoro",
-            dependencies = { "vim-airline/vim-airline" }
+            dependencies = { "VimfanTPdvorak/vim-airline", branch = "vimodoro" }
         }
     })
     ```
 * RTM integration:
-    * You should only run the following steps once, or whenever you have revoked
-      the given permission from the RTM's website.
-    * Apply for an API key from here https://www.rememberthemilk.com/services/api/.
-    * Run the `auth.zsh` script, located in the `zsh` directory, by passing the
-      shared secret and API key as follows:
+    1. You should only run the following steps once, or whenever you have
+       revoked the given permission from the RTM's website.
+    2. Apply for an API key from here https://www.rememberthemilk.com/services/api/.
+    3. Run the `auth.zsh` script, located in the `zsh` directory, by passing the
+       shared secret and API key that you acquired from step 2, as follows:
         ```zsh
         . /path/to/auth.zsh <sharedSecret> <apiKey>
         ```
-    * Follow the instructions provided by the output of the script.
+    4. Follow the instructions provided by the output of the script.
