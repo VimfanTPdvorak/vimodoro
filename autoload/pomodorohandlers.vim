@@ -323,7 +323,8 @@ function! s:vimodoro.ActionStart() abort
         let choice = confirm(s:rtm_taskname . "\nWant to start working on the selected task?", "&Yes\n&No")
         if choice == 1
             call self.Toggle()
-            call VimodoroStart(s:pomodoro_secret, s:rtm_taskname, 1)
+            let s:task_type = s:task_types.rtm
+            call VimodoroStart(s:pomodoro_secret, s:rtm_taskname, s:task_type)
             call pomodorocommands#logger("g:pomodoro_debug_file", "self.bufname = " . self.bufname)
             call pomodorocommands#logger("g:pomodoro_debug_file",
                         \ "VimodoroStart [" . s:tasklist[tasklistKey]['tasks'][s:vdrId]['lsID'] . ":" .
