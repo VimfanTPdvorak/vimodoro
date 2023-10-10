@@ -14,8 +14,8 @@ show appreciation for their work.
 Usage
 -----
 Currently, this version of Vimodoro is solely dependent on the [Vim-Airline](https://github.com/vim-airline/vim-airline)
-plugin. Once this plugin installed, it will display current date and time in the
-`g:airline_section_y` statusline.
+plugin. Once this plugin loaded and the Pomodoro state is inactive, it will
+display current date and time in the `g:airline_section_y` statusline.
 
 Vimodoro can also be integrated with RTM (Remember The Milk), a task management
 application. This integration allows users to select a task from RTM's task list
@@ -24,11 +24,6 @@ in the Pomodoro session, it will also be marked as completed in RTM. This
 seamless integration between the two applications enhances productivity and task
 management efficiency.
 
-* `<leader>pt` -- Toggle between the default displayed information in the
-  vim-airline's `g:airline_section_y` statusline and the Vimodoro's status
-  information. If the Pomodoro has been running, then executing the toggle will
-  display the file encoding within approximately two seconds, followed by the
-  Pomodoro status being displayed again.
 * `<leader>ps` -- Starts a new Pomodoro, a shortcut to `:PomodoroStart
   [pomodoro_name]`.
     After a Pomodoro has ended, a confirmation will remind you to take a break.
@@ -39,6 +34,7 @@ management efficiency.
   airline's setting.
 * `<leader>pf` -- Force stop on a running Pomodoro.
 * `:RTM` -- Toggle to show/hide the "Remember The Milk's" tasks list split window.
+* `:PomodoroStatus` -- Display current Pomodoro status
 
 Also, in addition to the default notifications inside vim, Vimodoro allows
 you to add further external notifications, such as sounds, system-notification
@@ -114,8 +110,8 @@ No need to do so if you are satisfied with the default settings.
     " Pomodoro status/time updates duration in second (default: 15)
     let g:pomodoro_status_refresh_duration = 15
 
-    " Time format display on statusbar (default:'%{strftime("%a %b %d, %H:%M:%S")}')
-    let g:pomodoro_time_format = '%{strftime("%a %b %d, %H:%M:%S")}'
+    " Time format display on statusbar (default:'%a %b %d, %H:%M:%S')
+    let g:pomodoro_time_format = '%a %b %d, %H:%M:%S'
 
     " Display time for n seconds then followed by Pomodoro status being displayed again,
     " or display file format for n milliseconds then back to display Pomodoro status. (default: 2)
