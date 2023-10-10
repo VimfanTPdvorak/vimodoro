@@ -36,6 +36,10 @@ call pomodorocommands#logger("g:pomodoro_debug_file", "Loading pomodoro...")
 
 let g:pomodoro_time_format =  '%a %b %d, %H:%M:%S'
 
+if !exists('g:pomodoro_rtm_filter')
+    let g:pomodoro_rtm_filter = "dueBefore:tomorrow AND status:incomplete"
+endif
+
 if !exists('g:pomodoro_redisplay_status_duration')
     let g:pomodoro_redisplay_status_duration = 2
 endif

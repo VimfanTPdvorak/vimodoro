@@ -67,10 +67,18 @@ Take another turn?
 
 ![Pomodoro Restart](img/LetsGetBackToWork.png)
 
+Demo
+----
+![Integration with RTM](img/vimodoro.gif)
+
 Configuration
 -------------
 Add the following options to your `~/.vimrc` to configure Vimodoro, if desired.
 No need to do so if you are satisfied with the default settings.
+
+    " Vimodoro RTM's filter (default: "dueBefore:tomorrow AND status:incomplete")
+    " For further details on RTM filters, please refer to the official RTM website.
+    let g:pomodoro_rtm_filter = "dueBefore:tomorrow AND status:incomplete"
 
     " Vimodoro's status refresh rate in seconds. (default: 15)
     let g:pomodoro_status_refresh_duration = 1

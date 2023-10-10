@@ -496,7 +496,7 @@ function! s:vimodoro.Render(requestReload = 0) abort
             setlocal nomodifiable
         endif
 
-        let rtmFilter = "dueBefore:tomorrow AND status:incomplete"
+        let rtmFilter = g:pomodoro_rtm_filter
 
         " Insert task list into s:tasklist
         execute "py3 sys.argv = " . "['" . rtmFilter . "']"
