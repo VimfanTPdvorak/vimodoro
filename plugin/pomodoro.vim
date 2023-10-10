@@ -34,7 +34,9 @@ call pomodorocommands#logger("g:pomodoro_debug_file", "Loading pomodoro...")
 
 " User configurable variables
 
-let g:pomodoro_time_format =  '%a %b %d, %H:%M:%S'
+if !exists('g:pomodoro_time_format')
+    let g:pomodoro_time_format = '%a %b %d, %H:%M:%S'
+endif
 
 if !exists('g:pomodoro_rtm_filter')
     let g:pomodoro_rtm_filter = "dueBefore:tomorrow AND status:incomplete"
@@ -171,32 +173,32 @@ function! PomodoroStatus(full = 0)
         let the_status =  g:pomodoro_icon_inactive
         let the_icon = the_status
     elseif s:vimodoro_state == s:vimodoro_states.focus
-        let the_icon = g:pomodoro_icon_started
-        let the_status = repeat(g:pomodoro_icon_started, pomodorohandlers#get_pomodoro_count()) . " "
+        let the_icon = (g:pomodoro_icon_started!='' ? g:pomodoro_icon_started : 'F')
+        let the_status = repeat(the_icon, pomodorohandlers#get_pomodoro_count()) . " "
         let the_status .= pomodorocommands#get_remaining(g:pomodoro_work_duration, s:pomodoro_started_at)
     elseif s:vimodoro_state == s:vimodoro_states.break
-        let the_icon = g:pomodoro_icon_break
-        let the_status = repeat(g:pomodoro_icon_break, pomodorohandlers#get_pomodoro_count()) . " "
+        let the_icon = (g:pomodoro_icon_break!='' ? g:pomodoro_icon_break : 'B')
+        let the_status = repeat(the_icon, pomodorohandlers#get_pomodoro_count()) . " "
         let the_status .= pomodorocommands#get_remaining(pomodorohandlers#get_pomodoro_break_duration(), s:pomodoro_break_at)
     elseif s:vimodoro_state == s:vimodoro_states.focus_ended
-        let the_icon = g:pomodoro_icon_focus_ended
-        let the_status = repeat(g:pomodoro_icon_focus_ended, pomodorohandlers#get_pomodoro_count()) . " "
+        let the_icon = (g:pomodoro_icon_focus_ended!='' ? g:pomodoro_icon_focus_ended : 'b')
+        let the_status = repeat(the_icon, pomodorohandlers#get_pomodoro_count()) . " "
         let the_status .= pomodorocommands#calculate_duration(s:vimodoro_state_changed_time, localtime())
     elseif s:vimodoro_state == s:vimodoro_states.break_ended
-        let the_icon = g:pomodoro_icon_break_ended
-        let the_status = repeat(g:pomodoro_icon_break_ended, pomodorohandlers#get_pomodoro_count()) . " "
+        let the_icon = (g:pomodoro_icon_break_ended!='' ? g:pomodoro_icon_break_ended : 'f')
+        let the_status = repeat(the_icon, pomodorohandlers#get_pomodoro_count()) . " "
         let the_status .= pomodorocommands#calculate_duration(s:vimodoro_state_changed_time, localtime())
     endif
 
     if a:full
         if s:vimodoro_state == s:vimodoro_states.inactive
-            let the_status = the_status . ' Pomodoro is inactive.'
+            let the_status = (the_status!='' ? the_status . ' ' : '') . 'Pomodoro is inactive.'
         else
             let the_status = substitute(s:pomodoro_name, '\(.\{28}\).\{-}\(.\{28}\)$', '\1...\2', '') . " " .the_status
         endif
     else
         if s:pomodoro_display_time
-            let the_status = the_icon . " " . strftime(g:pomodoro_time_format)
+            let the_status = (the_icon!=''? the_icon . ' ' : '') . strftime(g:pomodoro_time_format)
         endif
     endif
 

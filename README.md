@@ -153,19 +153,13 @@ time has ended, provided the specific notification variable is not set.
 
 Installation
 ------------
-I have submitted a pull request to the maintainer of vim-airline, requesting the
-addition of an extension I created for customizing the statusline of the
-Vimodoro RTM split window. I am uncertain of the timeline for review and merging
-of this request. Therefore, if you wish to utilize the customized statusline,
-you will need to use this [forked vim-airline](https://github.com/VimfanTPdvorak/vim-airline.git) repository at the vimodoro branch.
-
 * vim: Use your favorite plugin manager such as pathogen.
 * nvim: Using the lazy plugin manager.
     ```lua
     require("lazy").setup({
         -- your other plugins
         {"VimfanTPdvorak/vimodoro",
-            dependencies = { "VimfanTPdvorak/vim-airline", branch = "vimodoro" }
+            dependencies = { "vim-airline/vim-airline"}
         }
     })
     ```
@@ -179,3 +173,19 @@ you will need to use this [forked vim-airline](https://github.com/VimfanTPdvorak
         . /path/to/auth.zsh <sharedSecret> <apiKey>
         ```
     4. Follow the instructions provided by the output of the script.
+
+TODO:
+-----
+* Don't start Pomodoro on an RTM's finished task!
+* Custom highlighting for RTM tasks list; strikethrough finished tasks, etc.
+* The ability to toggle the display of completed tasks in RTM.
+* The ability to undo RTM completed tasks.
+* Vimodoro help file
+* etc...
+
+Known issue
+-----------
+We have not yet covered many reasonably provided RTM integration capabilities.
+Currently, Vimodoro is not able to recognize if the RTM filter has been set to
+display completed tasks. As a result, any tasks listed in the tasks list will be
+treated as incomplete tasks!
