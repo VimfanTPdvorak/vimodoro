@@ -111,6 +111,7 @@ if !exists('g:vimodoro_SetFocusWhenToggle')
 endif
 
 command! -nargs=* RTM call pomodorohandlers#VimodoroShow(<q-args>)
+command! RTMToggle call pomodorohandlers#VimodoroToggle()
 
 nnoremap <leader>pr :RTM <C-R>=pomodorohandlers#VimodoroGetRTMFilter()<CR>
 inoremap <leader>pr <Esc>li<C-g>u<Esc>l:RTM <C-R>=pomodorohandlers#VimodoroGetRTMFilter()<CR>
@@ -294,7 +295,7 @@ endfunction
 
 
 function! s:PomodoroRefreshStatusLine(timer)
-    AirlineRefresh
+    AirlineRefresh!
 endfunc
 
 function! IsVimodoroTicking()

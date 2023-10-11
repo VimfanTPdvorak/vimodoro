@@ -14,7 +14,8 @@ let g:loaded_autoload_pomodorohandlers = 1
 let s:pomodoro_count = 1
 let s:pomodoro_break_duration = g:pomodoro_short_break
 
-let s:pomodoro_rtm_filter =  "dueBefore:tomorrow AND status:incomplete"
+const s:pomodoro_default_rtm_filter = "dueBefore:tomorrow AND status:incomplete"
+let s:pomodoro_rtm_filter = s:pomodoro_default_rtm_filter
 
 " s:vimodoro_state
 " ----------------
@@ -181,6 +182,10 @@ let s:tasklist = {}
 "                            }
 "                  }
 "            }
+
+" TODO: The use of s:panel and s:vimodoro is excessive for this Vomodoro plugin.
+" Should simplifies the implementation since the RTM tasks list should be a
+" single instance within a (n)vim session.
 
 let s:panel = {}
 
@@ -701,18 +706,23 @@ endfunction
 
 function! pomodorohandlers#VimodoroShow(rtmFilter = s:pomodoro_rtm_filter) abort
     try
-        if a:rtmFilter !=? s:pomodoro_rtm_filter
-            let s:pomodoro_rtm_filter = a:rtmFilter
-            if pomodorohandlers#VimodoroIsVisible()
-                call t:vimodoro.SetFocus()
-            endif
-            call s:vimodoro.ActionReload()
+        if a:rtmFilter == ''
+            let rtmFilter = s:pomodoro_default_rtm_filter
         else
-            if ! pomodorohandlers#VimodoroIsVisible()
-                call pomodorohandlers#VimodoroToggle()
-            else
-                call t:vimodoro.SetFocus()
+            let rtmFilter = a:rtmFilter
+        endif
+        if rtmFilter !=? s:pomodoro_rtm_filter
+            let s:pomodoro_rtm_filter = rtmFilter
+            if exists('t:vimodoro')
+                " If t:vimodoro exists it meant the panel has been loaded.
+                let t:vimodoro.tasklistloaded = 0
+                call t:vimodoro.Toggle()
             endif
+        endif
+        if ! pomodorohandlers#VimodoroIsVisible()
+            call pomodorohandlers#VimodoroToggle()
+        else
+            call t:vimodoro.SetFocus()
         endif
     catch /^Vim\%((\a\+)\)\?:E11/
         echohl ErrorMsg
