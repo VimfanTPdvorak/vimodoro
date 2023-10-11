@@ -14,6 +14,8 @@ let g:loaded_autoload_pomodorohandlers = 1
 let s:pomodoro_count = 1
 let s:pomodoro_break_duration = g:pomodoro_short_break
 
+let s:pomodoro_rtm_filter =  "dueBefore:tomorrow AND status:incomplete"
+
 " s:vimodoro_state
 " ----------------
 " inactive: Vimodoro is inactive
@@ -194,16 +196,15 @@ endfunction
 
 function! s:panel.SetFocus() abort
     let winnr = bufwinnr(self.bufname)
-    " already focused.
-    if winnr == winnr()
-        return
-    endif
     if winnr == -1
         echoerr "Fatal: window does not exist!"
         return
+    elseif winnr == winnr() " already focused.
+        return
+    else
+        " wincmd would cause cursor outside window.
+        call s:exec_silent("norm! ".winnr."\<c-w>\<c-w>")
     endif
-    " wincmd would cause cursor outside window.
-    call s:exec_silent("norm! ".winnr."\<c-w>\<c-w>")
 endfunction
 
 function! s:panel.IsVisible() abort
@@ -351,7 +352,6 @@ function! s:getTasklistKey(vdrId)
 endfunction
 
 function! s:vimodoro.ActionReload() abort
-    echom "Calling self.Update(1)..."
     call self.Update(1)
 endfunction
 
@@ -496,7 +496,7 @@ function! s:vimodoro.Render(requestReload = 0) abort
             setlocal nomodifiable
         endif
 
-        let rtmFilter = g:pomodoro_rtm_filter
+        let rtmFilter = s:pomodoro_rtm_filter
 
         " Insert task list into s:tasklist
         execute "py3 sys.argv = " . "['" . rtmFilter . "']"
@@ -699,12 +699,20 @@ function! pomodorohandlers#VimodoroHide() abort
     endif
 endfunction
 
-function! pomodorohandlers#VimodoroShow() abort
+function! pomodorohandlers#VimodoroShow(rtmFilter = s:pomodoro_rtm_filter) abort
     try
-        if ! pomodorohandlers#VimodoroIsVisible()
-            call pomodorohandlers#VimodoroToggle()
+        if a:rtmFilter !=? s:pomodoro_rtm_filter
+            let s:pomodoro_rtm_filter = a:rtmFilter
+            if pomodorohandlers#VimodoroIsVisible()
+                call t:vimodoro.SetFocus()
+            endif
+            call s:vimodoro.ActionReload()
         else
-            call t:vimodoro.SetFocus()
+            if ! pomodorohandlers#VimodoroIsVisible()
+                call pomodorohandlers#VimodoroToggle()
+            else
+                call t:vimodoro.SetFocus()
+            endif
         endif
     catch /^Vim\%((\a\+)\)\?:E11/
         echohl ErrorMsg
@@ -723,4 +731,8 @@ function! pomodorohandlers#VimodoroFocus() abort
             echohl NONE
         endtry
     endif
+endfunction
+
+function! pomodorohandlers#VimodoroGetRTMFilter() abort
+    return s:pomodoro_rtm_filter
 endfunction

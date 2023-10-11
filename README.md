@@ -30,8 +30,7 @@ management efficiency.
     When the break has ended, it will prompt you if you wish to start a new
     Pomodoro.
 * `<leader>pm` -- Take a glimpse of the current date and time when the Pomodoro
-  is running or when the `g:airline_section_y` is toggled to display the default
-  airline's setting.
+  is running.
 * `<leader>pf` -- Force stop on a running Pomodoro.
 * `:RTM` -- Toggle to show/hide the "Remember The Milk's" tasks list split window.
 * `:PomodoroStatus` -- Display current Pomodoro status
@@ -142,11 +141,11 @@ that will be executed exclusively when work is done and when a break is done.  F
 users on macOS can define the two variables like this:
 
     let g:pomodoro_work_end_notification_cmd = "say \"Let's take a break.\";
-                \afplay $ICLOUDHOME/vim-pomodoro-audio/break.mp3&"
+                \afplay $ICLOUDHOME/vimodoro/CanonInD.mp3&"
     let g:pomodoro_break_end_notification_cmd = "say \"Let's get back to work.\""
 
-Note that in the above configuration example, the `$ICLOUDHOME` is simply a
-custom environment variable that holds the full path to the iCloud drive.
+Please note that in the above configuration example, `$ICLOUDHOME` is a custom
+environment variable that contains the complete path to the iCloud drive.
 
 The `g:pomodoro_notification_cmd` will be executed when either work or break
 time has ended, provided the specific notification variable is not set.
@@ -180,7 +179,7 @@ TODO:
 * Custom highlighting for RTM tasks list; strikethrough finished tasks, etc.
 * The ability to toggle the display of completed tasks in RTM.
 * The ability to undo RTM completed tasks.
-* Vimodoro help file
+* Vimodoro help file.
 * etc...
 
 Known issue

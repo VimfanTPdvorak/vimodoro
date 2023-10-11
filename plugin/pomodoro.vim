@@ -110,7 +110,10 @@ if !exists('g:vimodoro_SetFocusWhenToggle')
     let g:vimodoro_SetFocusWhenToggle = 1
 endif
 
-command! RTM call pomodorohandlers#VimodoroToggle()
+command! -nargs=* RTM call pomodorohandlers#VimodoroShow(<q-args>)
+
+nnoremap <leader>pr :RTM <C-R>=pomodorohandlers#VimodoroGetRTMFilter()<CR>
+inoremap <leader>pr <Esc>li<C-g>u<Esc>l:RTM <C-R>=pomodorohandlers#VimodoroGetRTMFilter()<CR>
 
 " Variables should not be touched by users
 
