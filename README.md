@@ -25,15 +25,19 @@ seamless integration between the two applications enhances productivity and task
 management efficiency.
 
 * `<leader>ps` -- Starts a new Pomodoro, a shortcut to `:PomodoroStart
-  [pomodoro_name]`.
-    After a Pomodoro has ended, a confirmation will remind you to take a break.
-    When the break has ended, it will prompt you if you wish to start a new
-    Pomodoro.
+  [pomodoro_name]`. After a Pomodoro has ended, a confirmation will remind you
+  to take a break. When the break has ended, it will prompt you if you wish to
+  start a new Pomodoro.
 * `<leader>pm` -- Take a glimpse of the current date and time when the Pomodoro
   is running.
 * `<leader>pf` -- Force stop on a running Pomodoro.
-* `:RTM` -- Toggle to show/hide the "Remember The Milk's" tasks list split window.
-* `:PomodoroStatus` -- Display current Pomodoro status
+* `:RTMToggle` -- Toggle to show/hide the "Remember The Milk's" tasks list split
+  window.
+* `<leader>pr` -- Shortcut to `:RTM <RTM search task query>`. Open the RTM's
+  tasks list panel (split window) based on the passed query. Please note that
+  there is no validation for the passed parameter, so ensure that you pass a
+  valid [RTM advanced search query](https://www.rememberthemilk.com/help/?ctx=basics.search.advanced).
+* `:PomodoroStatus` -- Display current Pomodoro status.
 
 Also, in addition to the default notifications inside vim, Vimodoro allows
 you to add further external notifications, such as sounds, system-notification
