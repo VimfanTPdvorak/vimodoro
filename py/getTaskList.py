@@ -51,34 +51,34 @@ def RTM_GetTasksList(rtmFilter):
     tlKey = -1
     if "stat" in response:
         if tasks["rsp"]["stat"] == "ok":
-            tl = tasks["rsp"]["tasks"]["list"]
-            for i in range(len(tl)):
-                tlKey += 1
-
-                if i > 0:
-                    vim.command("let s:tasklist['" + str(tlKey) + "'] = {'type': 'blankline', 'label': ''}")
+            if "list" in tasks["rsp"]["tasks"]:
+                tl = tasks["rsp"]["tasks"]["list"]
+                for i in range(len(tl)):
                     tlKey += 1
 
-                lsID = tl[i]['id']
-                # let s:tasklist['0'] = {'type': 'list', 'label': 'Personal'}
-                vim.command("let s:tasklist['" + str(tlKey) + "'] = {'type': 'list', 'label': '#" + RTM_GetListName(lsID) + "'}")
+                    if i > 0:
+                        vim.command("let s:tasklist['" + str(tlKey) + "'] = {'type': 'blankline', 'label': ''}")
+                        tlKey += 1
 
-                tlKey += 1
-                ts = tl[i]['taskseries']
-                # let s:tasklist['1'] = {'type': 'taskseries', 'tasks': {}}
-                vim.command("let s:tasklist['" + str(tlKey) + "'] = {'type': 'taskseries', 'tasks': {}}")
+                    lsID = tl[i]['id']
+                    # let s:tasklist['0'] = {'type': 'list', 'label': 'Personal'}
+                    vim.command("let s:tasklist['" + str(tlKey) + "'] = {'type': 'list', 'label': '#" + RTM_GetListName(lsID) + "'}")
 
-                for t in range(len(ts)):
-                    vdrIdx += 1
-                    vdrKey = str(vdrIdx).zfill(3)
-                    # let s:tasklist['1']['tasks']['001'] = {'lsID': 1, 'tsID': 2, 'ID': 3, 'label': 'blabla 1'}
-                    # let s:tasklist['1']['tasks']['002'] = {'lsID': 4, 'tsID': 5, 'ID': 6, 'label': 'blabla 2'}
-                    vim.command("let s:tasklist['" + str(tlKey) + "']['tasks']['" + vdrKey + "'] = {" + \
-                                "'lsID': '" + lsID +"', " + \
-                                "'tsID': '" + ts[t]['id'] + "', " + \
-                                "'ID': '" + ts[t]['task'][0]['id'] + "', " + \
-                                "'label': '" + ts[t]['name'].replace("'", "''") + "'}")
+                    tlKey += 1
+                    ts = tl[i]['taskseries']
+                    # let s:tasklist['1'] = {'type': 'taskseries', 'tasks': {}}
+                    vim.command("let s:tasklist['" + str(tlKey) + "'] = {'type': 'taskseries', 'tasks': {}}")
 
+                    for t in range(len(ts)):
+                        vdrIdx += 1
+                        vdrKey = str(vdrIdx).zfill(3)
+                        # let s:tasklist['1']['tasks']['001'] = {'lsID': 1, 'tsID': 2, 'ID': 3, 'label': 'blabla 1'}
+                        # let s:tasklist['1']['tasks']['002'] = {'lsID': 4, 'tsID': 5, 'ID': 6, 'label': 'blabla 2'}
+                        vim.command("let s:tasklist['" + str(tlKey) + "']['tasks']['" + vdrKey + "'] = {" + \
+                                    "'lsID': '" + lsID +"', " + \
+                                    "'tsID': '" + ts[t]['id'] + "', " + \
+                                    "'ID': '" + ts[t]['task'][0]['id'] + "', " + \
+                                    "'label': '" + ts[t]['name'].replace("'", "''") + "'}")
             vim.command("let self.tasklistloaded = 1")
             vim.command("echo ''")
         else:

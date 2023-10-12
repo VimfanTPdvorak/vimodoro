@@ -520,27 +520,26 @@ function! s:vimodoro.Draw() abort
     " Delete text into blackhole register.
     call s:exec('1,$ d _')
 
-    let firstln = 1
+    call append(0, 'Query> ' .. s:pomodoro_rtm_filter)
 
-    for key in keys(s:tasklist)
-        call pomodorocommands#logger("g:pomodoro_debug_file", "s:tasklist('" . key . "']['type'] = " . s:tasklist[key]['type'])
-        if s:tasklist[key]['type'] == 'list'
-            if firstln
-                call append(0, s:tasklist[key]['label'])
-                "remove the last empty line
-                call s:exec('$d _')
-                let firstln = 0
-            else
+    call pomodorocommands#logger("g:pomodoro_debug_file", "s:tasklist = " . string(s:tasklist))
+
+    if len(s:tasklist)
+        for key in keys(s:tasklist)
+            call pomodorocommands#logger("g:pomodoro_debug_file", "s:tasklist('" . key . "']['type'] = " . s:tasklist[key]['type'])
+            if s:tasklist[key]['type'] == 'list'
                 call append(line('$'), s:tasklist[key]['label'])
+            elseif s:tasklist[key]['type'] == 'taskseries'
+                for vdrKey in keys(s:tasklist[key]['tasks'])
+                    call append(line('$'), vdrKey . ". " . s:tasklist[key]['tasks'][vdrKey]['label'])
+                endfor
+            elseif s:tasklist[key]['type'] == 'blankline'
+                call append(line('$'), '')
             endif
-        elseif s:tasklist[key]['type'] == 'taskseries'
-            for vdrKey in keys(s:tasklist[key]['tasks'])
-                call append(line('$'), vdrKey . ". " . s:tasklist[key]['tasks'][vdrKey]['label'])
-            endfor
-        elseif s:tasklist[key]['type'] == 'blankline'
-            call append(line('$'), '')
-        endif
-    endfor
+        endfor
+    else
+        call append(line('$'), '🚧 No tasks returned')
+    endif
 
     call self.AppendHelp()
 
