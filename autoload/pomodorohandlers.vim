@@ -170,8 +170,8 @@ let s:tasklist = {}
 " tasklist = { '0': {'type': 'list', 'label': 'Personal'},
 "             '1': {'type': 'taskseries',
 "                   'tasks': {
-"                               '001': {'lsID': '123', 'tsID': '555', 'ID': '544', 'label': 'To do #1'},
-"                               '002': {'lsID': '123', 'tsID': '455', 'ID': '444', 'label': 'To do #2'}
+"                               '001': {'lsID': '123', 'tsID': '555', 'ID': '544', 'label': 'To do #1', 'completed': '2023-06-22T12:38:59Z'},
+"                               '002': {'lsID': '123', 'tsID': '455', 'ID': '444', 'label': 'To do #2', 'completed': ''}
 "                            }
 "                  },
 "             '2': {'type': 'blankline', 'label': ''},
@@ -531,7 +531,11 @@ function! s:vimodoro.Draw() abort
                 call append(line('$'), s:tasklist[key]['label'])
             elseif s:tasklist[key]['type'] == 'taskseries'
                 for vdrKey in keys(s:tasklist[key]['tasks'])
-                    call append(line('$'), vdrKey . ". " . s:tasklist[key]['tasks'][vdrKey]['label'])
+                    let delMarker = s:tasklist[key]['tasks'][vdrKey]['completed'] != '' ? '~~' : ''
+                    call append(line('$'), delMarker .. vdrKey . ". " . s:tasklist[key]['tasks'][vdrKey]['label'] .. delMarker)
+                    "let sT = s:tasklist[key]['tasks'][vdrKey]['completed'] != '' ? &t_Ts : ''
+                    "let eT = s:tasklist[key]['tasks'][vdrKey]['completed'] != '' ? &t_Te : ''
+                    "call append(line('$'), sT .. vdrKey . ". " . s:tasklist[key]['tasks'][vdrKey]['label'] .. eT)
                 endfor
             elseif s:tasklist[key]['type'] == 'blankline'
                 call append(line('$'), '')

@@ -72,13 +72,14 @@ def RTM_GetTasksList(rtmFilter):
                     for t in range(len(ts)):
                         vdrIdx += 1
                         vdrKey = str(vdrIdx).zfill(3)
-                        # let s:tasklist['1']['tasks']['001'] = {'lsID': 1, 'tsID': 2, 'ID': 3, 'label': 'blabla 1'}
-                        # let s:tasklist['1']['tasks']['002'] = {'lsID': 4, 'tsID': 5, 'ID': 6, 'label': 'blabla 2'}
+                        # let s:tasklist['1']['tasks']['001'] = {'lsID': 1, 'tsID': 2, 'ID': 3, 'label': 'blabla 1', 'completed': '2023-06-22T12:38:59Z'}
+                        # let s:tasklist['1']['tasks']['002'] = {'lsID': 4, 'tsID': 5, 'ID': 6, 'label': 'blabla 2', 'completed'; ''}
                         vim.command("let s:tasklist['" + str(tlKey) + "']['tasks']['" + vdrKey + "'] = {" + \
                                     "'lsID': '" + lsID +"', " + \
                                     "'tsID': '" + ts[t]['id'] + "', " + \
                                     "'ID': '" + ts[t]['task'][0]['id'] + "', " + \
-                                    "'label': '" + ts[t]['name'].replace("'", "''") + "'}")
+                                    "'label': '" + ts[t]['name'].replace("'", "''") + "', " + \
+                                    "'completed': '" + ts[t]['task'][0]['completed'] + "'}")
             vim.command("let self.tasklistloaded = 1")
             vim.command("echo ''")
         else:
