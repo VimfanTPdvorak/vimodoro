@@ -1,3 +1,6 @@
+setlocal conceallevel=3
+setlocal concealcursor=nvc
+
 syntax match VimodoroHelpKey '^" \zs.\{-}\ze:' contained
 syntax match VimodoroHelpTitle '===.*===' contained
 syntax match VimodoroHelp '^".*$' contains=VimodoroHelpKey,VimodoroHelpTitle
@@ -13,7 +16,8 @@ syntax match VimodoroTodo '^[0-9]\{3\}\. .*$' contains=VimodoroTodoId,VimodoroTo
 hi def link VimodoroTodoInComplete Constant
 hi def link VimodoroTodoId Type
 
-syntax match VimodoroTodoComplete '\~\~.*\~\~' conceal
+syntax match VimodoroStrikethrough '\~\~' contained conceal
+syntax match VimodoroTodoComplete '\~\~[^\~]\+\~\~' contains=VimodoroStrikethrough
 
 " Ref: https://stackoverflow.com/questions/59956790/terminal-vim-strikethrough
 if &term =~ 'xterm\|kitty\|alacritty\|tmux'
@@ -31,15 +35,60 @@ endif
 
 hi def link VimodoroTodoComplete VimodoroTodoCompleted
 
-"hi def link StrikeThrough VimodoroTodoCompleted
-"call matchadd('StrikeThrough', '\~\~\ze.*\~\~', 10, -1, {'conceal': ''})
-"call matchadd('StrikeThrough', '\~\~\.*\zs\~\~\ze', 10, -1, {'conceal': ''})
-
-syntax match VimodoroRTMQuery '.*$' contained
 syntax match VimodoroQueryPrompt '^Query>' contained
-syntax match VimodoroQuery '^Query>.*$' contains=VimodoroQueryPrompt,VimodoroRTMQuery nextgroup=VimodoroRTMQuery
-syntax match VimodoroList '^#.*$'
+syntax match VimodoroQuery '^Query>.*$'
+            \ contains=
+            \VimodoroQueryPrompt,
+            \VimodoroRTMkeywords,
+            \VimodoroRTMOperators
 
-hi def link VimodoroRTMQuery Keyword
 hi def link VimodoroQueryPrompt Function
+
+syntax match VimodoroRTMKeywords
+            \ '\clist\|
+            \listContains\|
+            \priority\|
+            \status\|
+            \\<tag\>\|tagContains\|
+            \isTagged\|
+            \location\|
+            \locationContains\|
+            \locatedWithin\|
+            \isLocated\|
+            \isRepeating\|
+            \name\|
+            \noteContains\|
+            \hasNotes\|
+            \filename\|
+            \hasAttachments\|
+            \\<due\>\|dueBefore\|dueAfter\|dueWithin\|
+            \\<start\>\|startBefore\|startAfter\|startWithin\|
+            \timeEstimate\|
+            \hasTimeEstimate\|
+            \hasURL\|
+            \hasSubtasks\|
+            \isSubtask\|
+            \\<completed\>\|completedBefore\|completedAfter\|completedWithin\|
+            \\<added\>\|addedBefore addedAfter addedWithin\|
+            \updated\|updatedBefore\|updatedAfter\|updatedWithin\|
+            \posponed\|
+            \isShared sharedWith\|
+            \givenTo\|givenBy\|isGiven\|
+            \source\|
+            \includeArchived'
+            \ contained
+
+syntax match VimodoroRTMOperators
+            \ '\c\<AND\>\|
+            \\<OR\>\|
+            \\<NOT\>\|
+            \"\|
+            \(\|)\|
+            \:'
+            \ contained
+
+hi def link VimodoroRTMKeywords Keyword
+hi def link VimodoroRTMOperators Type
+
+syntax match VimodoroList '^#.*$'
 hi def link VimodoroList Comment
