@@ -175,16 +175,9 @@ Installation
 
 TODO:
 -----
-* Don't start Pomodoro on an RTM's finished task!
-* Custom highlighting for RTM tasks list; strikethrough finished tasks, etc.
-* The ability to toggle the display of completed tasks in RTM.
-* The ability to undo RTM completed tasks.
-* Vimodoro help file.
-* etc...
-
-Known issue
------------
-We have not yet covered many reasonably provided RTM integration capabilities.
-Currently, Vimodoro is not able to recognize if the RTM filter has been set to
-display completed tasks. As a result, any tasks listed in the tasks list will be
-treated as incomplete tasks!
+* [X] Don't start Pomodoro on an RTM's finished task!
+* [X] Custom highlighting for RTM tasks list; strikethrough finished tasks, etc.
+* ~~[-] The ability to toggle the display of completed tasks in RTM.~~
+* [ ] The ability to undo RTM completed tasks.
+* [ ] Vimodoro help file.
+* [ ] etc...
