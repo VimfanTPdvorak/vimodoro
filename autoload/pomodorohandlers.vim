@@ -108,7 +108,7 @@ function! pomodorohandlers#restart(name, duration, timer)
         else
             let s:pomodoro_count = 1
         endif
-        call VimodoroStart(s:pomodoro_secret, a:name, s:task_type)
+        call VimodoroStart(s:pomodoro_secret, a:name)
     elseif answer == "INTERRUPTED"
         call PomodoroInterrupted(s:pomodoro_secret)
     elseif answer == "DONE"
@@ -120,6 +120,10 @@ function! pomodorohandlers#rtm_task_complete(the_secret)
     if a:the_secret == s:pomodoro_secret
         call s:vimodoro.rtm_task_complete()
     endif
+endfunction
+
+function! pomodorohandlers#is_rtm_task()
+    return s:task_type
 endfunction
 
 function! pomodorohandlers#rtm_reset_if_non_rtm_task(the_secret)
@@ -330,7 +334,7 @@ function! s:vimodoro.ActionStart() abort
         if choice == 1
             call self.Toggle()
             let s:task_type = s:task_types.rtm
-            call VimodoroStart(s:pomodoro_secret, s:rtm_taskname, s:task_type)
+            call VimodoroStart(s:pomodoro_secret, s:rtm_taskname)
             call pomodorocommands#logger("g:pomodoro_debug_file", "self.bufname = " . self.bufname)
             call pomodorocommands#logger("g:pomodoro_debug_file",
                         \ "VimodoroStart [" . s:tasklist[tasklistKey]['tasks'][s:vdrId]['lsID'] . ":" .

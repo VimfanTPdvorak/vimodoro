@@ -209,17 +209,17 @@ function! PomodoroStatus(full = 0)
     return the_status
 endfunction
 
-function! VimodoroStart(the_secret, name, is_rtm)
+function! VimodoroStart(the_secret, name)
     if a:the_secret == s:pomodoro_secret
-        call pomodorocommands#logger("g:pomodoro_debug_file", "VimodoroStart - a:is_rtm = " . a:is_rtm)
-        call s:PomodoroStart(a:name, a:is_rtm)
+        call pomodorocommands#logger("g:pomodoro_debug_file", "VimodoroStart - s:task_type = " . pomodorohandlers#is_rtm_task())
+        call s:PomodoroStart(a:name)
     endif
 endfunction
 
-function! s:PomodoroStart(name, is_rtm = 0)
-    call pomodorocommands#logger("g:pomodoro_debug_file", "Calling PomodoroStart - a:is_rtm = " . a:is_rtm)
+function! s:PomodoroStart(name)
+    call pomodorocommands#logger("g:pomodoro_debug_file", "Calling PomodoroStart - s:task_type = " . pomodorohandlers#is_rtm_task())
     if s:vimodoro_state == s:vimodoro_states.inactive || s:vimodoro_state == s:vimodoro_states.focus_ended || s:vimodoro_state == s:vimodoro_states.break_ended
-        call s:PomodoroGo(a:name, a:is_rtm)
+        call s:PomodoroGo(a:name)
     else
         let choice = confirm("Do you really wanted to stop the current running Pomodoro and start a new one?", "&Yes\n&No")
         if choice == 1
@@ -228,12 +228,12 @@ function! s:PomodoroStart(name, is_rtm = 0)
                         \ " focus stopped. Duration: " .
                         \ pomodorocommands#calculate_duration(s:pomodoro_started_at, localtime()) . ".")
 
-            call s:PomodoroGo(a:name, a:is_rtm)
+            call s:PomodoroGo(a:name)
         endif
     endif
 endfunction
 
-function! s:PomodoroGo(name, is_rtm)
+function! s:PomodoroGo(name)
     let s:pomodoro_display_time = 0
 
     if a:name == ''
@@ -242,7 +242,7 @@ function! s:PomodoroGo(name, is_rtm)
         let s:pomodoro_name = a:name
     endif
 
-    if !a:is_rtm
+    if !pomodorohandlers#is_rtm_task()
         call pomodorohandlers#rtm_reset_if_non_rtm_task(s:pomodoro_secret)
     endif
 
@@ -324,11 +324,11 @@ endfunction
 
 function! PomodoroInterrupted(the_secret)
     if a:the_secret == s:pomodoro_secret
-        if s:vimodoro_state == 1 " Started (Focus mode)
+        if s:vimodoro_state == s:vimodoro_states.focus
             call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . s:pomodoro_name . " #" . pomodorohandlers#get_pomodoro_count() .
                         \ " focus stopped (Interrupted). Duration: " .
                         \ pomodorocommands#calculate_duration(s:pomodoro_started_at, localtime()) . ".")
-        else " The s:vimodoro_state == 2 (break mode)
+        else " The s:vimodoro_state == s:vimodoro_states.break
             call pomodorocommands#logger("g:pomodoro_log_file", "Pomodoro " . s:pomodoro_name . " #" . pomodorohandlers#get_pomodoro_count() .
                         \ " break stopped (Interrupted). Duration: " .
                         \ pomodorocommands#calculate_duration(s:pomodoro_break_at, localtime()) . ".")
