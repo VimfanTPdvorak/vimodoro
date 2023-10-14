@@ -70,7 +70,7 @@ syntax match VimodoroRTMKeywords
             \isSubtask\|
             \\<completed\>\|completedBefore\|completedAfter\|completedWithin\|
             \\<added\>\|addedBefore addedAfter addedWithin\|
-            \updated\|updatedBefore\|updatedAfter\|updatedWithin\|
+            \\<updated\>\|updatedBefore\|updatedAfter\|updatedWithin\|
             \posponed\|
             \isShared sharedWith\|
             \givenTo\|givenBy\|isGiven\|
