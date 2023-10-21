@@ -272,8 +272,6 @@ function! s:vimodoro.BindAu() abort
     augroup Vimodoro_Main
         au!
         au BufEnter <buffer> call s:exitIfLast()
-        au BufEnter,BufLeave <buffer> if exists('t:vimodoro') |
-                    \let t:vimodoro.height = winheight(winnr()) | endif
     augroup end
 endfunction
 
@@ -414,7 +412,6 @@ function! s:vimodoro.Show() abort
         let cmd = "botright horizontal" .
                     \self.height . ' new ' . self.bufname
     else
-        keepalt botright horizontal 20 new /tmp/test.txt
         let cmd = "topleft horizontal" .
                     \self.height . ' new ' . self.bufname
     endif
@@ -595,6 +592,8 @@ function! s:vimodoro.rtm_task_complete() abort
         " TODO: Should check if the mark as done was a success to decide wether
         " or not to reset the s:vdrId variable, etc.
         let s:tasklist[tasklistKey]['tasks'][s:vdrId]['completed'] = localtime()
+        let t:vimodoro.tasklistloaded = 0
+        call pomodorohandlers#VimodoroHide()
     endif
 
     " This echo has been done in the above python script, but I don't know why
