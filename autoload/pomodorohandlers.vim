@@ -376,24 +376,14 @@ function! s:vimodoro.SetTargetFocus() abort
 endfunction
 
 function! s:vimodoro.Toggle() abort
-    "Global auto commands to keep vimodoro up to date.
-    let auEvents = "BufEnter,InsertLeave,CursorMoved,BufWritePost"
-
     if self.IsVisible()
         call self.Hide()
         call self.SetTargetFocus()
-        augroup Vimodoro
-            autocmd!
-        augroup END
     else
         call self.Show()
         if !g:vimodoro_SetFocusWhenToggle
             call self.SetTargetFocus()
         endif
-        augroup Vimodoro
-            au!
-            exec "au! ".auEvents." * call pomodorohandlers#VimodoroUpdate()"
-        augroup END
     endif
 endfunction
 
@@ -457,6 +447,11 @@ function! s:vimodoro.Update(requestReload = 0) abort
     if !self.IsVisible()
         return
     endif
+
+    if !exists('w:vimodoro_id')
+        let w:vimodoro_id = 'id_'.s:getUniqueID()
+    endif
+
     " Do nothing if we're in the vimodoro panel and not requesting reload
     if exists('b:isVimodoroBuffer') && !a:requestReload
         return
@@ -655,22 +650,6 @@ function! s:exitIfLast() abort
         if exists('t:vimodoro')
             call t:vimodoro.Hide()
         endif
-    endif
-endfunction
-
-function! pomodorohandlers#VimodoroUpdate() abort
-    if !exists('t:vimodoro')
-        return
-    endif
-    if !exists('w:vimodoro_id')
-        let w:vimodoro_id = 'id_'.s:getUniqueID()
-    endif
-    " assume window layout won't change during updating.
-    let thiswinnr = winnr()
-    call t:vimodoro.Update()
-    " focus moved
-    if winnr() != thiswinnr
-        call s:exec("norm! ".thiswinnr."\<c-w>\<c-w>")
     endif
 endfunction
 
