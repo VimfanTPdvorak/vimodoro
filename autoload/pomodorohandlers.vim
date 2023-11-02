@@ -587,7 +587,7 @@ function! s:vimodoro.rtm_task_complete() abort
         " TODO: Should check if the mark as done was a success to decide wether
         " or not to reset the s:vdrId variable, etc.
         let s:tasklist[tasklistKey]['tasks'][s:vdrId]['completed'] = localtime()
-        let t:vimodoro.tasklistloaded = 0
+        let s:vimodoro.tasklistloaded = 0
         call pomodorohandlers#VimodoroHide()
     endif
 
