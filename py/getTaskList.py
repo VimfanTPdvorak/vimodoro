@@ -3,9 +3,11 @@ import datetime
 import sys
 import os
 import json
+import urllib.error
+import urllib.request
+import urllib.parse
 import traceback
 import hashlib
-import requests
 
 rtmREST = vim.eval("s:rtmREST")
 
@@ -15,13 +17,30 @@ sharedSecret = os.getenv("VIMODORO_RTM_SECRET")
 
 rtmFilter = vim.eval("rtmFilter")
 
+def RTM_request(params):
+    # Encode the query parameters
+    encoded_params = urllib.parse.urlencode(params)
+
+    # Append the encoded parameters to the base URL
+    url = f"{rtmREST}?{encoded_params}"
+
+    try:
+        response = urllib.request.urlopen(url)
+        return response.read().decode('utf-8')
+    except urllib.error.URLError as e:
+        print(f"Error: {e.reason}")
+
 def RTM_Sign(params):
     return hashlib.md5((sharedSecret+params).encode()).hexdigest()
 
 def RTM_GetListName(listID):
     apiSig = RTM_Sign("api_key"+apiKey+"auth_token"+authToken+"formatjsonmethodrtm.lists.getList")
-    response = requests.get(f"{rtmREST}?api_key={apiKey}&format=json&method=rtm.lists.getList&auth_token={authToken}&api_sig={apiSig}")
-    response = response.text
+    params = {"api_key": apiKey, \
+              "format": "json", \
+              "method": "rtm.lists.getList", \
+              "auth_token": authToken, \
+              "api_sig": apiSig}
+    response = RTM_request(params)
     lists = json.loads(response)
     if "stat" in response:
         if lists["rsp"]["stat"] == "ok":
@@ -43,9 +62,13 @@ def RTM_GetTasksList(rtmFilter):
     # let s:tasklist = {}
     vim.command("let s:tasklist = {}")
     apiSig = RTM_Sign("api_key"+apiKey+"auth_token"+authToken+"filter"+rtmFilter+"formatjsonmethodrtm.tasks.getList")
-    rtmFilter = rtmFilter.replace(" ", "%20")
-    response = requests.get(f"{rtmREST}?api_key={apiKey}&format=json&method=rtm.tasks.getList&filter={rtmFilter}&auth_token={authToken}&api_sig={apiSig}")
-    response = response.text
+    params = {"api_key": apiKey, \
+              "format": "json", \
+              "method": "rtm.tasks.getList", \
+              "filter": rtmFilter, \
+              "auth_token": authToken, \
+              "api_sig": apiSig}
+    response = RTM_request(params)
     tasks = json.loads(response) # Parse response as JSON
     vdrIdx = 0
     tlKey = -1
