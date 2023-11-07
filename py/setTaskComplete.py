@@ -1,11 +1,12 @@
+# import utils
 import vim
 import datetime
 import sys
 import os
-import json
 import traceback
-import hashlib
-import requests
+
+plugin_root = vim.eval("s:plugin_root")
+vim.command(f"py3file {plugin_root}/py/utils.py")
 
 rtmREST = vim.eval("s:rtmREST")
 
@@ -29,8 +30,12 @@ def RTM_Sign(params):
 
 def RTM_CreateTimeline():
     apiSig = RTM_Sign("api_key"+apiKey+"auth_token"+authToken+"formatjsonmethodrtm.timelines.create")
-    response = requests.get(f"{rtmREST}?api_key={apiKey}&format=json&method=rtm.timelines.create&auth_token={authToken}&api_sig={apiSig}")
-    response = response.text
+    params = {"api_key": apiKey, \
+              "format": "json", \
+              "method": "rtm.timelines.create", \
+              "auth_token": authToken, \
+              "api_sig": apiSig}
+    response = RTM_request(params)
     timelines = json.loads(response)
     if "stat" in response:
         if timelines["rsp"]["stat"] == "ok":
@@ -52,8 +57,16 @@ def RTM_CreateTimeline():
 def RTM_MarkTaskComplete(listID, taskseriesID, taskID):
     timeline = RTM_CreateTimeline()
     apiSig = RTM_Sign("api_key"+apiKey+"auth_token"+authToken+"formatjson"+"list_id"+listID+"methodrtm.tasks.complete"+"task_id"+taskID+"taskseries_id"+taskseriesID+"timeline"+timeline)
-    response = requests.get(f"{rtmREST}?api_key={apiKey}&format=json&method=rtm.tasks.complete&auth_token={authToken}&api_sig={apiSig}&list_id={listID}&task_id={taskID}&taskseries_id={taskseriesID}&timeline={timeline}")
-    response = response.text
+    params = {"api_key": apiKey, \
+              "format": "json", \
+              "method": "rtm.tasks.complete", \
+              "auth_token": authToken, \
+              "api_sig": apiSig, \
+              "list_id": listID, \
+              "task_id": taskID, \
+              "taskseries_id": taskseriesID, \
+              "timeline": timeline}
+    response = RTM_request(params)
     tasks = json.loads(response) # Parse response as JSON
     if "stat" in response:
         if tasks["rsp"]["stat"] == "ok":

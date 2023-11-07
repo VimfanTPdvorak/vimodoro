@@ -1,13 +1,12 @@
+# import utils
 import vim
 import datetime
 import sys
 import os
-import json
-import urllib.error
-import urllib.request
-import urllib.parse
 import traceback
-import hashlib
+
+plugin_root = vim.eval("s:plugin_root")
+vim.command(f"py3file {plugin_root}/py/utils.py")
 
 rtmREST = vim.eval("s:rtmREST")
 
@@ -16,22 +15,6 @@ authToken = os.getenv("VIMODORO_RTM_TOKEN")
 sharedSecret = os.getenv("VIMODORO_RTM_SECRET")
 
 rtmFilter = vim.eval("rtmFilter")
-
-def RTM_request(params):
-    # Encode the query parameters
-    encoded_params = urllib.parse.urlencode(params)
-
-    # Append the encoded parameters to the base URL
-    url = f"{rtmREST}?{encoded_params}"
-
-    try:
-        response = urllib.request.urlopen(url)
-        return response.read().decode('utf-8')
-    except urllib.error.URLError as e:
-        print(f"Error: {e.reason}")
-
-def RTM_Sign(params):
-    return hashlib.md5((sharedSecret+params).encode()).hexdigest()
 
 def RTM_GetListName(listID):
     apiSig = RTM_Sign("api_key"+apiKey+"auth_token"+authToken+"formatjsonmethodrtm.lists.getList")
