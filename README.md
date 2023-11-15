@@ -152,7 +152,7 @@ time has ended, provided the specific notification variable is not set.
 
 Installation
 ------------
-* vim: Use your favorite plugin manager such as pathogen.
+* vim: Use your favorite plugin manager such as pathogen and vim-plug.
 * nvim: Using the lazy plugin manager.
     ```lua
     require("lazy").setup({
