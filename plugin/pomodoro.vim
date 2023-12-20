@@ -110,8 +110,9 @@ if !exists('g:vimodoro_SetFocusWhenToggle')
     let g:vimodoro_SetFocusWhenToggle = 1
 endif
 
-command! -nargs=* RTM call pomodorohandlers#VimodoroShow(<q-args>)
-command! RTMToggle call pomodorohandlers#VimodoroToggle()
+command! -nargs=* RTM call s:ShowVimodoro()
+command! RTMToggle call s:ToggleVimodoro()
+command! RTMToggleStatus call s:ToggleStatus()
 
 nnoremap <leader>pr :RTM <C-R>=pomodorohandlers#VimodoroGetRTMFilter()<CR>
 inoremap <leader>pr <Esc>li<C-g>u<Esc>l:RTM <C-R>=pomodorohandlers#VimodoroGetRTMFilter()<CR>
@@ -154,6 +155,14 @@ let s:pomodoro_display_time = 1
 
 let s:save_cpo = &cpo
 set cpo&vim
+
+let s:airline_section_y = '%{airline#util#wrap(airline#parts#ffenc(),0)}'
+
+if exists("g:pomodoro_hide_statusline_at_startup")
+    let s:pomodoro_show_status = 0
+else
+    let s:pomodoro_show_status = 1
+endif
 
 command! -nargs=* PomodoroStart call s:PomodoroStart(<q-args>)
 command! PomodoroStatus echo PomodoroStatus(1)
@@ -217,6 +226,9 @@ function! VimodoroStart(the_secret, name)
 endfunction
 
 function! s:PomodoroStart(name)
+    if !s:pomodoro_show_status
+        call s:ToggleStatus()
+    endif
     call pomodorocommands#logger("g:pomodoro_debug_file", "Calling PomodoroStart - s:task_type = " . pomodorohandlers#is_rtm_task())
     if s:vimodoro_state == s:vimodoro_states.inactive || s:vimodoro_state == s:vimodoro_states.focus_ended || s:vimodoro_state == s:vimodoro_states.break_ended
         call s:PomodoroGo(a:name)
@@ -386,10 +398,43 @@ function! SetPomodoroBreakAt(the_secret)
     endif
 endfunction
 
-let s:pomodoro_show_time_timer = timer_start(s:time_timer_duration,
-            \ 's:PomodoroRefreshStatusLine',
-            \ {'repeat': -1})
+function! s:ToggleStatus()
+    if s:pomodoro_show_status
+        "TODO: Need further thinking for running some validations before
+        "deciding to hide the Vimodoro's status (time).
+        "call timer_stop(s:pomodoro_show_time_timer)
+        call timer_pause(s:pomodoro_show_time_timer, 1)
+        call airline#remove_statusline_func('PomodoroStatus')
+        let g:airline_section_y = s:airline_section_y
+    else
+        call s:activateVimodoroStatusline()
+    endif
+    let s:pomodoro_show_status = (s:pomodoro_show_status == 0) ? 1 : 0
+    call s:PomodoroRefreshStatusLine(0)
+endfunction
 
-call airline#parts#define_function('vimodoro', 'PomodoroStatus')
+function! s:activateVimodoroStatusline()
+    let s:pomodoro_show_time_timer = timer_start(s:time_timer_duration,
+                \ 's:PomodoroRefreshStatusLine',
+                \ {'repeat': -1})
+    call airline#parts#define_function('vimodoro', 'PomodoroStatus')
+    let g:airline_section_y = airline#section#create_right(['vimodoro', 'ffenc'])
+endfunction
 
-let g:airline_section_y = airline#section#create_right(['vimodoro', 'ffenc'])
+function! s:ShowVimodoro()
+    if !s:pomodoro_show_status
+        call s:ToggleStatus()
+    endif
+    call pomodorohandlers#VimodoroShow(<q-args>)
+endfunction
+
+function! s:ToggleVimodoro()
+    if !s:pomodoro_show_status
+        call s:ToggleStatus()
+    endif
+    call pomodorohandlers#VimodoroToggle()
+endfunction
+
+if s:pomodoro_show_status
+    call s:activateVimodoroStatusline()
+endif
