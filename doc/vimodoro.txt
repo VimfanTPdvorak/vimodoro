@@ -1,0 +1,69 @@
+*vimodoro.txt*   A plugin for the Pomodoro time management technique.
+
+==============================================================================
+CONTENTS                                                            *vimodoro*
+
+    1. Intro                         |vimodoro-intro|
+    2. Prerequisites                 |vimodoro-prerequisites|
+    3. Mappings                      |vimodoro-mappings|
+    4. Commands                      |vimodoro-commands|
+
+==============================================================================
+1. Intro                                                      *vimodoro-intro*
+
+Currently, this version of Vimodoro is solely dependent on the Vim-Airline
+plugin. Once this plugin loaded and the Pomodoro state is inactive, it will
+display current date and time in the `g:airline_section_y` statusline.
+
+Vimodoro can also be integrated with RTM (Remember The Milk), a task management
+application. This integration allows users to select a task from RTM's task list
+to be started in a Pomodoro focus session. Once the task is marked as completed
+in the Pomodoro session, it will also be marked as completed in RTM. This
+seamless integration between the two applications enhances productivity and task
+management efficiency.
+
+==============================================================================
+2. Prerequisites                                      *vimodoro-prerequisites*
+
+Make sure you have already installed the Vim-Airline plugin.
+
+==============================================================================
+3. Mappings                                                *vimodoro-mappings*
+
+MAP                MODE
+                                                         *peekaboo_<leader>tt*
+<leader>ps          ni    Stands a new Pomodoro, a shortcut to `:PomodoroStart
+                          [pomodoro_name]`. After a Pomodoro has ended, a
+                          confirmation will remind you to take a break. When the
+                          break has ended, it will prompt you if you wist to
+                          start a new Pomodoro.
+
+<leader>pm          ni    Take a glimpse of the current date and time when the
+                          Pomodoro is running.
+
+<leader>pf          ni    Force stop on a running Pomodoro.
+
+<leader>rtm         n     A keybinding to `:RTMToggle`. Toggle to show/hide the
+                          "Remember The Milk's" tasks list split window.
+
+<leader>pr          ni    Shortcut to `:RTM <RTM search task query>`. Open the RTM's
+                          tasks list panel (split window) based on the passed
+                          query. Please note that there is no validation for the
+                          passed parameter, so ensure that you pass a valid `RTM
+                          advanced search query`. Visit
+                          https://www.rememberthemilk.com/help/?ctx=basics.search.advanced
+                          to learn about RTM's search query.
+
+==============================================================================
+4. Commands                                                *vimodoro-commands*
+
+*:PomodoroStart*
+    Start a Pomodoro session. Pass a title of the task after the command.
+
+*:PomodoroStatus*
+    Display current Pomodoro status.
+
+*:RTMToggle*
+    Toggle to show/hide the "Remember The Milk's" tasks list split window.
+
+ vim:tw=78:ts=8:noet:ft=help:norl:
