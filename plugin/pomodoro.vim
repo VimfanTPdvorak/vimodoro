@@ -110,7 +110,7 @@ if !exists('g:vimodoro_SetFocusWhenToggle')
     let g:vimodoro_SetFocusWhenToggle = 1
 endif
 
-command! -nargs=* RTM call s:ShowVimodoro()
+command! -nargs=* RTM call s:ShowVimodoro(<q-args>)
 command! RTMToggle call s:ToggleVimodoro()
 command! RTMToggleStatus call s:ToggleStatus()
 
@@ -421,11 +421,11 @@ function! s:activateVimodoroStatusline()
     let g:airline_section_y = airline#section#create_right(['vimodoro', 'ffenc'])
 endfunction
 
-function! s:ShowVimodoro()
+function! s:ShowVimodoro(args)
     if !s:pomodoro_show_status
         call s:ToggleStatus()
     endif
-    call pomodorohandlers#VimodoroShow(<q-args>)
+    call pomodorohandlers#VimodoroShow(a:args)
 endfunction
 
 function! s:ToggleVimodoro()
