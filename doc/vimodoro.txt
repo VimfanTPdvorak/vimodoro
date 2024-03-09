@@ -32,7 +32,7 @@ Make sure you have already installed the Vim-Airline plugin.
 
 MAP                MODE
                                                          *peekaboo_<leader>tt*
-<leader>ps          ni    Stands a new Pomodoro, a shortcut to `:PomodoroStart
+<leader>ps          ni    Starts a new Pomodoro, a shortcut to `:PomodoroStart
                           [pomodoro_name]`. After a Pomodoro has ended, a
                           confirmation will remind you to take a break. When the
                           break has ended, it will prompt you if you wist to

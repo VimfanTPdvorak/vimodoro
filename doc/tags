@@ -1,0 +1,10 @@
+:PomodoroStart	vimodoro.txt	/*:PomodoroStart*
+:PomodoroStatus	vimodoro.txt	/*:PomodoroStatus*
+:RTMToggle	vimodoro.txt	/*:RTMToggle*
+peekaboo_<leader>tt	vimodoro.txt	/*peekaboo_<leader>tt*
+vimodoro	vimodoro.txt	/*vimodoro*
+vimodoro-commands	vimodoro.txt	/*vimodoro-commands*
+vimodoro-intro	vimodoro.txt	/*vimodoro-intro*
+vimodoro-mappings	vimodoro.txt	/*vimodoro-mappings*
+vimodoro-prerequisites	vimodoro.txt	/*vimodoro-prerequisites*
+vimodoro.txt	vimodoro.txt	/*vimodoro.txt*
