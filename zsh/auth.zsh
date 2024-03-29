@@ -20,7 +20,7 @@ rtmFrob=""
 
 function RTMSign {
     params=$1
-    echo $(md5 -q -s $sharedSecret$params)
+    echo $(echo -n "$sharedSecret$params"|openssl dgst -md5|cut -d' ' -f2)
 }
 
 function RTMGetToken {
@@ -47,6 +47,9 @@ function RTMGetToken {
 function RTMAuthentication {
     apiSig=$(RTMSign "api_key"$apiKey"formatjsonmethodrtm.auth.getFrob")
     response=$(curl -s "$rtmREST?api_key=$apiKey&format=json&method=rtm.auth.getFrob&api_sig=$apiSig")
+
+    authLogger "apiSig = $apiSig"
+    authLogger "response = $response"
 
     if [[ -n $(echo $response|grep "\"stat\":") ]];then
         if [[ $(echo $response|jq ".rsp.stat") = "\"ok\"" ]];then
@@ -75,6 +78,12 @@ function RTMAuthentication {
     else
         echo "Something went wrong. We got this response from RTM when calling its API."
         echo $response
+    fi
+}
+
+function authLogger {
+    if [[ -f /tmp/debug.auth.log ]];then
+        echo "$(date) - $1" >> /tmp/debug.auth.log
     fi
 }
 
