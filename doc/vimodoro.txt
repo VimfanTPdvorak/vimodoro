@@ -31,21 +31,25 @@ Make sure you have already installed the Vim-Airline plugin.
 3. Mappings                                                *vimodoro-mappings*
 
 MAP                MODE
-                                                         *peekaboo_<leader>tt*
+                                                         *vimodoro_<leader>ps*
 <leader>ps          ni    Starts a new Pomodoro, a shortcut to `:PomodoroStart
                           [pomodoro_name]`. After a Pomodoro has ended, a
                           confirmation will remind you to take a break. When the
                           break has ended, it will prompt you if you wist to
                           start a new Pomodoro.
 
+                                                         *vimodoro_<leader>pm*
 <leader>pm          ni    Take a glimpse of the current date and time when the
                           Pomodoro is running.
 
+                                                         *vimodoro_<leader>pf*
 <leader>pf          ni    Force stop on a running Pomodoro.
 
+                                                        *vimodoro_<leader>rtm*
 <leader>rtm         n     A keybinding to `:RTMToggle`. Toggle to show/hide the
                           "Remember The Milk's" tasks list split window.
-
+ 
+                                                         *vimodoro_<leader>pr*
 <leader>pr          ni    Shortcut to `:RTM <RTM search task query>`. Open the RTM's
                           tasks list panel (split window) based on the passed
                           query. Please note that there is no validation for the
